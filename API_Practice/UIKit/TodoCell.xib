@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="TodoCell" rowHeight="141" id="0Px-bk-X6P" customClass="TodoCell" customModule="API_Practice" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="462" height="141"/>
+            <autoresizingMask key="autoresizingMask"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="0Px-bk-X6P" id="LBO-PG-x7G">
+                <rect key="frame" x="0.0" y="0.0" width="462" height="141"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="751" text="Todo ID : 01" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="D5G-ZX-XJB">
+                        <rect key="frame" x="20.000000000000007" y="9.9999999999999982" width="89.666666666666686" height="20.333333333333329"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" text="할 일" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IXj-yw-C7J">
+                        <rect key="frame" x="20" y="39" width="318" height="92"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="252" horizontalCompressionResistancePriority="752" spacing="14" translatesAutoresizingMaskIntoConstraints="NO" id="pmz-Bm-5fO">
+                        <rect key="frame" x="348" y="9.9999999999999982" width="104" height="28.333333333333329"/>
+                        <subviews>
+                            <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="252" horizontalCompressionResistancePriority="752" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="IJs-4m-n0d">
+                                <rect key="frame" x="0.0" y="0.0" width="45" height="28.333333333333332"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="수정">
+                                    <fontDescription key="titleFontDescription" type="boldSystem" pointSize="0.0"/>
+                                </buttonConfiguration>
+                                <connections>
+                                    <action selector="onEditBtnClicked:" destination="0Px-bk-X6P" eventType="touchUpInside" id="PKy-PC-nEv"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="252" horizontalCompressionResistancePriority="752" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pv7-Z9-Ias">
+                                <rect key="frame" x="59" y="0.0" width="45" height="28.333333333333332"/>
+                                <color key="tintColor" red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="filled" title="삭제">
+                                    <fontDescription key="titleFontDescription" type="boldSystem" pointSize="0.0"/>
+                                </buttonConfiguration>
+                                <connections>
+                                    <action selector="onDeleteBtnClicked:" destination="0Px-bk-X6P" eventType="touchUpInside" id="uEB-aC-OmH"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                    </stackView>
+                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2us-to-0yY">
+                        <rect key="frame" x="403" y="48.333333333333336" width="51" height="31.000000000000007"/>
+                    </switch>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="pmz-Bm-5fO" firstAttribute="leading" secondItem="IXj-yw-C7J" secondAttribute="trailing" constant="10" id="1H0-UO-NxH"/>
+                    <constraint firstItem="2us-to-0yY" firstAttribute="top" secondItem="pmz-Bm-5fO" secondAttribute="bottom" constant="10" id="ARv-JO-Xzh"/>
+                    <constraint firstItem="IXj-yw-C7J" firstAttribute="leading" secondItem="D5G-ZX-XJB" secondAttribute="leading" id="AY0-VH-5V2"/>
+                    <constraint firstAttribute="trailing" secondItem="pmz-Bm-5fO" secondAttribute="trailing" constant="10" id="DWg-VA-HWH"/>
+                    <constraint firstItem="D5G-ZX-XJB" firstAttribute="top" secondItem="LBO-PG-x7G" secondAttribute="top" constant="10" id="Hji-ES-ZC9"/>
+                    <constraint firstItem="pmz-Bm-5fO" firstAttribute="top" secondItem="D5G-ZX-XJB" secondAttribute="top" id="alZ-LD-QLU"/>
+                    <constraint firstAttribute="bottom" secondItem="IXj-yw-C7J" secondAttribute="bottom" constant="10" id="dqW-eY-rte"/>
+                    <constraint firstItem="D5G-ZX-XJB" firstAttribute="leading" secondItem="LBO-PG-x7G" secondAttribute="leading" constant="20" id="iO8-J1-3sv"/>
+                    <constraint firstItem="IXj-yw-C7J" firstAttribute="top" secondItem="D5G-ZX-XJB" secondAttribute="bottom" constant="8.6666666666666714" id="oFU-H7-FtR"/>
+                    <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="2us-to-0yY" secondAttribute="bottom" constant="10" id="u5Q-Js-wTN"/>
+                    <constraint firstItem="2us-to-0yY" firstAttribute="trailing" secondItem="pmz-Bm-5fO" secondAttribute="trailing" id="z15-WV-k8M"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="contentLabel" destination="IXj-yw-C7J" id="A5H-iW-5V3"/>
+                <outlet property="selectionSwitch" destination="2us-to-0yY" id="AYL-Q2-oIJ"/>
+                <outlet property="titleLabel" destination="D5G-ZX-XJB" id="GPm-Nj-aEp"/>
+            </connections>
+            <point key="canvasLocation" x="291.60305343511448" y="-10.211267605633804"/>
+        </tableViewCell>
+    </objects>
+</document>
