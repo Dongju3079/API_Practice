@@ -13,7 +13,7 @@ struct API_PracticeApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                ContentView()
+                TodosView()
                     .tabItem {
                         Image(systemName: "1.square.fill")
                         Text("SwiftUI")

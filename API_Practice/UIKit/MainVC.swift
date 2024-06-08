@@ -10,7 +10,7 @@ import SwiftUI
 
 class MainVC: UIViewController {
     
-    var dummyDataList = ["abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc", "abc", "abc", "abc", "abc", "abc", "abc"]
+    var todoList: [Todo] = []
     
     @IBOutlet weak var myTableView: UITableView!
     
@@ -19,8 +19,8 @@ class MainVC: UIViewController {
         view.backgroundColor = .systemYellow
         setTableview()
         
-        
     }
+    
     
     private func setTableview() {
         
@@ -32,13 +32,13 @@ class MainVC: UIViewController {
 
 extension MainVC : UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return dummyDataList.count
+        return todoList.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TodoCell.reuseIdentifier, for: indexPath) as? TodoCell else { return UITableViewCell() }
         
-        cell.contentLabel.text = dummyDataList[indexPath.row]
+        cell.todo = todoList[indexPath.row]
         
         return cell
     }
