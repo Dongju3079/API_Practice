@@ -13,10 +13,15 @@ import RxRelay
 
 extension TodosAPI_Rx {
     
-    static func fetchTodosRxAddErrorTask(page: Int = 1) -> Observable<BaseListResponse<Todo>> {
+    typealias ListResponse = BaseListResponse<Todo>
+    typealias TodoResponse = BaseResponse<Todo>
+    typealias ResultListData = Result<ListResponse, ApiError>
+    typealias ResultTodoData = Result<TodoResponse, ApiError>
+    
+    static func fetchTodosRxAddErrorTask(page: Int = 1) -> Observable<ListResponse> {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
-            return Observable.error(ApiError.notAllowedUrl)
+            return .error(ApiError.notAllowedUrl)
         }
         
         var request = URLRequest(url: url)
@@ -25,8 +30,8 @@ extension TodosAPI_Rx {
         
         return URLSession.shared.rx
             .response(request: request)
-            .map { (response: HTTPURLResponse, data: Data) -> BaseListResponse<Todo> in
-                return try JSONDecoder().decode(BaseListResponse<Todo>.self, from: data)
+            .map { (response: HTTPURLResponse, data: Data) -> ListResponse in
+                return try JSONDecoder().decode(ListResponse.self, from: data)
             }
             .map({ response in
                 guard let todos = response.data,
@@ -36,42 +41,35 @@ extension TodosAPI_Rx {
                 return response
             })
             .catch { err in
+                if let err = err as? DecodingError {
+                    throw err
+                }
+                
                 if let error = err as? ApiError {
                     throw error
-                } else {
-                    throw ApiError.unknown(err)
                 }
+                
+                throw ApiError.unknown(err)
             }
     }
     
-    static func fetchTodosRx(page: Int = 1) -> Observable<Result<BaseListResponse<Todo>, ApiError>> {
+    static func fetchTodosRx(page: Int = 1) -> Observable<ResultListData> {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
-        return getBaseListResponse(request)
+        return getBaseResponse(request, ListResponse.self)
     }
     
-    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> Observable<[Todo]> {
-        
-        return addTodoRxByJson(content: content, isDone: isDone)
-            .flatMapLatest { _ in
-                fetchTodosRxAddErrorTask()
-            }
-            .compactMap { $0.data }
-            .catchAndReturn([])
-            .share(replay: 1)
-    }
-    
-    static func addTodoRxByMultipart(content: String, isDone: Bool = false) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
+    static func addTodoRxByMultipart(content: String, isDone: Bool = false) -> Observable<ResultTodoData> {
         
         guard let url = URL(string: baseUrl + "/todos") else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         var urlRequest = URLRequest(url: url)
@@ -89,13 +87,13 @@ extension TodosAPI_Rx {
         // 실제 데이터
         urlRequest.httpBody = form.bodyData
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
-    static func addTodoRxByJson(content: String, isDone: Bool = false) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
+    static func addTodoRxByJson(content: String, isDone: Bool = false) -> Observable<ResultTodoData> {
         
         guard let url = URL(string: baseUrl + "/todos-json") else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         var urlRequest = URLRequest(url: url)
@@ -111,18 +109,18 @@ extension TodosAPI_Rx {
             urlRequest.httpBody = jsonData
         } catch {
             
-            return Observable.just(.failure(.jsonEncoding))
+            return .just(.failure(.jsonEncoding))
         }
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
-    static func searchTodosRx(searchTerm: String, page: Int = 1) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
+    static func searchTodosRx(searchTerm: String, page: Int = 1) -> Observable<ResultTodoData> {
         
         let queryItems = ["query": searchTerm, "page": "\(page)"]
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: queryItems) else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         var request = URLRequest(url: url)
@@ -130,13 +128,13 @@ extension TodosAPI_Rx {
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
         
-        return getBaseResponse(request)
+        return getBaseResponse(request, TodoResponse.self)
     }
     
-    static func searchTodoRx(id: Int) -> Observable<BaseResponse<Todo>> {
+    static func searchTodoRx(id: Int) -> Observable<TodoResponse> {
         
         guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return Observable.error(ApiError.notAllowedUrl)
+            return .error(ApiError.notAllowedUrl)
         }
         
         var urlRequest = URLRequest(url: url)
@@ -147,7 +145,7 @@ extension TodosAPI_Rx {
             .response(request: urlRequest)
             .map { (response: HTTPURLResponse, data: Data) in
                 do {
-                    let todoData = try JSONDecoder().decode(BaseResponse<Todo>.self, from: data)
+                    let todoData = try JSONDecoder().decode(TodoResponse.self, from: data)
                     return todoData
                 } catch {
                     throw ApiError.decodingError
@@ -155,11 +153,10 @@ extension TodosAPI_Rx {
             }
     }
     
-    
-    static func editTodoRxEncoded(id: Int, content: String, isDone: Bool) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
+    static func editTodoRxEncoded(id: Int, content: String, isDone: Bool) -> Observable<ResultTodoData> {
         
         guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         let requestParams = ["title" : content, "is_done" : "\(isDone)"]
@@ -170,13 +167,13 @@ extension TodosAPI_Rx {
         urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         urlRequest.percentEncodeParameters(parameters: requestParams)
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
-    static func editTodoRxByJson(id: Int, content: String, isDone: Bool) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
+    static func editTodoRxByJson(id: Int, content: String, isDone: Bool) -> Observable<ResultTodoData> {
         
         guard let url = URL(string: baseUrl + "/todos-json" + "/\(id)") else {
-            return Observable.just(.failure(.notAllowedUrl))
+            return .just(.failure(.notAllowedUrl))
         }
         
         let requestParams = ["title" : content, "is_done" : "\(isDone)"]
@@ -193,10 +190,10 @@ extension TodosAPI_Rx {
             return Observable.just(.failure(.jsonEncoding))
         }
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
-    static func deleteTodoRx(id: Int) -> Observable<BaseResponse<Todo>> {
+    static func deleteTodoRx(id: Int) -> Observable<TodoResponse> {
         
         guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
             return Observable.error(ApiError.notAllowedUrl)
@@ -211,13 +208,27 @@ extension TodosAPI_Rx {
             .response(request: urlRequest)
             .map { (response: HTTPURLResponse, data: Data) in
                 do {
-                    let listData = try JSONDecoder().decode(BaseResponse<Todo>.self, from: data)
+                    let listData = try JSONDecoder().decode(TodoResponse.self, from: data)
                     return listData
                 } catch {
                     throw ApiError.decodingError
                 }
             }
     }
+    
+    // MARK: - API 연쇄 호출
+    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> Observable<[Todo]> {
+        
+        return addTodoRxByJson(content: content, isDone: isDone)
+            .flatMapLatest { _ in
+                fetchTodosRxAddErrorTask()
+            }
+            .compactMap { $0.data }
+            .catchAndReturn([])
+            .share(replay: 1)
+    }
+    
+    // MARK: - API 동시 호출
     
     static func deleteTodosRxZip(selectedTodos: [Int]) -> Observable<[Int]> {
         
@@ -260,58 +271,70 @@ extension TodosAPI_Rx {
 
 // MARK: - Hepler
 extension TodosAPI_Rx {
-    static private func getBaseListResponse(_ request: URLRequest) -> Observable<Result<BaseListResponse<Todo>, ApiError>> {
+    
+    /// UrlSession을 통해서 받은 데이터 값을 T 모델로 파싱
+    /// - Parameters:
+    ///   - request: 요청 값
+    ///   - type: 파싱하고자 하는 모델
+    /// - Returns: Observable<T, Error>
+    private static func getBaseResponse<T: Decodable>(_ request: URLRequest, _ type: T.Type) -> Observable<Result<T, ApiError>> {
         return URLSession.shared.rx
             .response(request: request)
             .map { (response: HTTPURLResponse, data: Data) in
-                switch self.parseJsonBaseList(data: data) {
-                case .success(let listData):
-                    print("파싱 성공")
-                        return .success(listData)
-                case .failure(let err):
-                    print("파싱 실패")
-                        return .failure(err)
+                if let err = checkResponse(response) {
+                    return .failure(err)
                 }
+                
+                return self.parseJsonBase(data, type)
             }
     }
     
-    static private func getBaseResponse(_ request: URLRequest) -> Observable<Result<BaseResponse<Todo>, ApiError>> {
-        return URLSession.shared.rx
-            .response(request: request)
-            .map { (response: HTTPURLResponse, data: Data) in
-                switch self.parseJsonBase(data: data) {
-                case .success(let listData):
-                    print("파싱 성공")
-                        return .success(listData)
-                case .failure(let err):
-                    print("파싱 실패")
-                        return .failure(err)
-                }
-            }
-    }
-    
-    private static func parseJsonBaseList(data: Data) -> Result<BaseListResponse<Todo>, ApiError> {
+    /// 데이터 파싱
+    /// - Parameters:
+    ///   - data: UrlSession을 통해서 전달받은 data
+    ///   - type: 파싱 모델
+    /// - Returns: Result<T, Error>
+    private static func parseJsonBase<T: Decodable>(_ data: Data,_ type: T.Type) -> Result<T, ApiError> {
         do {
-            let listData = try JSONDecoder().decode(BaseListResponse<Todo>.self, from: data)
+            let response = try JSONDecoder().decode(T.self, from: data)
             
-            guard let todos = listData.data,
-                  !todos.isEmpty else {
+            if let baseList = response as? ListResponse,
+               let todos = baseList.data,
+               todos.isEmpty {
                 return .failure(.noContent)
             }
             
-            return .success(listData)
+            return .success(response)
         } catch {
             return .failure(.decodingError)
         }
     }
     
-    private static func parseJsonBase(data: Data) -> Result<BaseResponse<Todo>, ApiError> {
-        do {
-            let listData = try JSONDecoder().decode(BaseResponse<Todo>.self, from: data)
-            return .success(listData)
-        } catch {
-            return .failure(.decodingError)
+    
+    /// 응답결과를 내부 조건에 따라서 ApiError로 return
+    /// - Parameter response: UrlSession 응답값
+    /// - Returns: ApiError?
+    private static func checkResponse(_ response: URLResponse?) -> ApiError? {
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return .unknown(nil)
         }
+        
+        switch httpResponse.statusCode {
+        case 401:
+            return .unauthorized
+      
+        case 204:
+            return .noContent
+            
+        default: print("default")
+        }
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+            return .badStatus(code: httpResponse.statusCode)
+        }
+        
+        return nil
     }
 }
 

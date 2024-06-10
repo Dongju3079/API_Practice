@@ -7,12 +7,16 @@
 
 import Foundation
 import MultipartForm
-import Swift
 import Combine
 
 extension TodosAPI_Combine {
     
-    static func fetchTodosResultType(page: Int = 1) -> AnyPublisher<Result<BaseListResponse<Todo>, ApiError>, Never> {
+    typealias ListResponse = BaseListResponse<Todo>
+    typealias TodoResponse = BaseResponse<Todo>
+    typealias ResultListData = Result<ListResponse, ApiError>
+    typealias ResultTodoData = Result<TodoResponse, ApiError>
+    
+    static func fetchTodosResultType(page: Int = 1) -> AnyPublisher<ResultListData, Never> {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             // eraseToAnyPublisher : Publisher wrapping
@@ -21,12 +25,31 @@ extension TodosAPI_Combine {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.addValue("application/json", forHTTPHeaderField: "accept")
+        request.addValue("application/json", forHTTPHeaderField: "accept") 
         
         return URLSession.shared.dataTaskPublisher(for: request)
-            .map { (data: Data, response: URLResponse) -> Result<BaseListResponse<Todo>, ApiError> in
+            .map { (data: Data, response: URLResponse) -> ResultListData in
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    return .failure(.unknown(nil))
+                }
+                
+                switch httpResponse.statusCode {
+                case 401:
+                    return .failure(.unauthorized)
+              
+                case 204:
+                    return .failure(.noContent)
+                    
+                default: print("default")
+                }
+                
+                if !(200...299).contains(httpResponse.statusCode) {
+                    return .failure(.badStatus(code: httpResponse.statusCode))
+                }
+                
                 do {
-                    let listData = try JSONDecoder().decode(BaseListResponse<Todo>.self, from: data)
+                    let listData = try JSONDecoder().decode(ListResponse.self, from: data)
                     
                     guard let todos = listData.data,
                           !todos.isEmpty else {
@@ -42,7 +65,7 @@ extension TodosAPI_Combine {
             .eraseToAnyPublisher()
     }
     
-    static func fetchTodos(page: Int = 1) -> AnyPublisher<BaseListResponse<Todo>, ApiError> {
+    static func fetchTodos(page: Int = 1) -> AnyPublisher<ListResponse, ApiError> {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             // eraseToAnyPublisher : Publisher wrapping
@@ -54,16 +77,14 @@ extension TodosAPI_Combine {
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
         return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { (data: Data, response: URLResponse) -> Data in
-               return data
-            }
-            .decode(type: BaseListResponse<Todo>.self, decoder: JSONDecoder())
-            .tryMap(checkContent(response:))
+            .tryMap(checkResponse(task:))
+            .decode(type: ListResponse.self, decoder: JSONDecoder())
+            .tryMap(checkResponseType(decoded: ))
             .mapError(checkError(err:))
             .eraseToAnyPublisher()
     }
     
-    static func addTodoByMultipart(content: String, isDone: Bool = false) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
+    static func addTodoByMultipart(content: String, isDone: Bool = false) -> AnyPublisher<TodoResponse, ApiError> {
         
         guard let url = URL(string: baseUrl + "/todos") else {
             return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
@@ -84,10 +105,10 @@ extension TodosAPI_Combine {
         // 실제 데이터
         urlRequest.httpBody = form.bodyData
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
-    static func addTodoByJson(content: String, isDone: Bool = false) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
+    static func addTodoByJson(content: String, isDone: Bool = false) -> AnyPublisher<TodoResponse, ApiError> {
         
         guard let url = URL(string: baseUrl + "/todos-json") else {
             return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
@@ -109,12 +130,97 @@ extension TodosAPI_Combine {
             return Fail(error: ApiError.jsonEncoding).eraseToAnyPublisher()
         }
         
-        return getBaseResponse(urlRequest)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
+    
+    static func searchTodos(searchTerm: String, page: Int = 1) -> AnyPublisher<ListResponse, ApiError>{
+        
+        let queryItems = ["query": searchTerm, "page": "\(page)"]
+        
+        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: queryItems) else {
+            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        
+        return getBaseResponse(request, ListResponse.self)
+    }
+
+    static func searchTodo(id: Int) -> AnyPublisher<TodoResponse, ApiError> {
+        
+        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
+            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        return getBaseResponse(urlRequest, TodoResponse.self)
+    }
+    
+    static func editTodoEncoded(id: Int, content: String, isDone: Bool) -> AnyPublisher<TodoResponse, ApiError> {
+        
+        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
+            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
+        }
+        
+        let requestParams = ["title" : content, "is_done" : "\(isDone)"]
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
+        urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        urlRequest.percentEncodeParameters(parameters: requestParams)
+        
+        return getBaseResponse(urlRequest, TodoResponse.self)
+    }
+    
+    static func editTodoByJson(id: Int, content: String, isDone: Bool) -> AnyPublisher<TodoResponse, ApiError> {
+        
+        guard let url = URL(string: baseUrl + "/todos-json" + "/\(id)") else {
+            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
+        }
+        
+        let requestParams = ["title" : content, "is_done" : "\(isDone)"]
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
+        urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: requestParams, options: [.prettyPrinted])
+            urlRequest.httpBody = jsonData
+        } catch {
+            return Fail(error: ApiError.jsonEncoding).eraseToAnyPublisher()
+        }
+        
+        return getBaseResponse(urlRequest, TodoResponse.self)
+    }
+    
+    static func deleteTodo(id: Int) -> AnyPublisher<TodoResponse, ApiError> {
+        
+        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
+            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "DELETE"
+        
+        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
+        
+        return getBaseResponse(urlRequest, TodoResponse.self)
+    }
+
+    // MARK: - API 연쇄호출
     
     // failure이 있는 경우
     // 에러를 받아서 처리하는 메서드 추가
-    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> AnyPublisher<BaseListResponse<Todo>, ApiError> {
+    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> AnyPublisher<ListResponse, ApiError> {
         
         return self.addTodoByJson(content: content, isDone: isDone)
             .flatMap { _ in
@@ -168,89 +274,8 @@ extension TodosAPI_Combine {
             .eraseToAnyPublisher()
     }
     
-    static func searchTodos(searchTerm: String, page: Int = 1) -> AnyPublisher<BaseListResponse<Todo>, ApiError>{
-        
-        let queryItems = ["query": searchTerm, "page": "\(page)"]
-        
-        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: queryItems) else {
-            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("application/json", forHTTPHeaderField: "accept")
-        
-        
-        return getBaseListResponse(request)
-    }
-
-    static func searchTodo(id: Int) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
-        
-        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
-        }
-        
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
-        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
-        
-        return getBaseResponse(urlRequest)
-    }
+    // MARK: - API 동시호출
     
-    static func editTodoEncoded(id: Int, content: String, isDone: Bool) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
-        
-        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
-        }
-        
-        let requestParams = ["title" : content, "is_done" : "\(isDone)"]
-        
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "PUT"
-        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
-        urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        urlRequest.percentEncodeParameters(parameters: requestParams)
-        
-        return getBaseResponse(urlRequest)
-    }
-    
-    static func editTodoByJson(id: Int, content: String, isDone: Bool) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
-        
-        guard let url = URL(string: baseUrl + "/todos-json" + "/\(id)") else {
-            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
-        }
-        
-        let requestParams = ["title" : content, "is_done" : "\(isDone)"]
-        
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
-        urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: requestParams, options: [.prettyPrinted])
-            urlRequest.httpBody = jsonData
-        } catch {
-            return Fail(error: ApiError.jsonEncoding).eraseToAnyPublisher()
-        }
-        
-        return getBaseResponse(urlRequest)
-    }
-    
-    static func deleteTodo(id: Int) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
-        
-        guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return Fail(error: ApiError.notAllowedUrl).eraseToAnyPublisher()
-        }
-        
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "DELETE"
-        
-        urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
-        
-        return getBaseResponse(urlRequest)
-    }
-
     // Merge
     // 여러개의 퍼블리셔의 값을 각각 내려줌 (return type 단일 요소)
     static func deleteTodosMerge(selectedTodos: [Int]) -> AnyPublisher<Int, ApiError> {
@@ -371,46 +396,70 @@ extension TodosAPI_Combine {
 
 // MARK: - Hepler
 extension TodosAPI_Combine {
-
-    static private func getBaseListResponse(_ request: URLRequest) -> AnyPublisher<BaseListResponse<Todo>, ApiError> {
+    
+    private static func getBaseResponse<T:Decodable>(_ request: URLRequest,_ type: T.Type) -> AnyPublisher<T, ApiError> {
         return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { (data: Data, response: URLResponse) -> Data in
-               return data
-            }
-            .decode(type: BaseListResponse<Todo>.self, decoder: JSONDecoder())
-            .tryMap(checkContent(response:))
+            .tryMap(checkResponse(task:))
+            .decode(type: T.self, decoder: JSONDecoder())
+            .tryMap(checkResponseType(decoded: ))
             .mapError(checkError(err:))
             .eraseToAnyPublisher()
     }
     
-    static private func getBaseResponse(_ request: URLRequest) -> AnyPublisher<BaseResponse<Todo>, ApiError> {
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap { (data: Data, response: URLResponse) -> Data in
-               return data
-            }
-            .decode(type: BaseResponse<Todo>.self, decoder: JSONDecoder())
-            .mapError(checkError(err:))
-            .eraseToAnyPublisher()
+    private static func checkResponse(task: (data: Data, response: URLResponse)) throws -> Data {
+        
+        guard let httpResponse = task.response as? HTTPURLResponse else {
+            throw ApiError.unknown(nil)
+        }
+        
+        switch httpResponse.statusCode {
+        case 401:
+            throw ApiError.unauthorized
+      
+        case 204:
+            throw ApiError.noContent
+            
+        default: print("default")
+        }
+        
+        if !(200...299).contains(httpResponse.statusCode) {
+            throw ApiError.badStatus(code: httpResponse.statusCode)
+        }
+        
+        return task.data
     }
     
-    static private func checkError(err: Error) -> ApiError {
+    private static func checkResponseType<T:Decodable>(decoded: T) throws -> T {
+        if let listData = decoded as? ListResponse {
+            switch checkContent(response: listData) {
+            case .success(_):
+                return decoded
+            case .failure(let err):
+                throw err
+            }
+        } else {
+            return decoded
+        }
+    }
+    
+    private static func checkError(err: Error) -> ApiError {
         if let apiError = err as? ApiError {
             return apiError
         }
         
-        if let error = err as? DecodingError {
+        if let _ = err as? DecodingError {
             return ApiError.decodingError
         }
         
         return ApiError.unknown(err)
     }
     
-    static private func checkContent(response: BaseListResponse<Todo>) throws -> BaseListResponse<Todo> {
+    private static func checkContent(response: ListResponse) -> ResultListData {
         guard let todos = response.data,
               !todos.isEmpty else {
-            throw ApiError.noContent
+            return .failure(.noContent)
         }
-        return response
+        return .success(response)
     }
 }
 

@@ -14,7 +14,7 @@ class TodosVM_Combine: ObservableObject {
     var subscriptions = Set<AnyCancellable>()
     
     init() {
-        searchTodosNoError()
+        addTodoMultipart()
     }
     
     private func handleError(_ err: Error) {
@@ -61,7 +61,7 @@ extension TodosVM_Combine {
     }
         
     private func addTodoMultipart() {
-        TodosAPI_Combine.addTodoByMultipart(content: "6.8 addTest", isDone: true)
+        TodosAPI_Combine.addTodoByMultipart(content: "6.10 addTest", isDone: true)
             .sink { [weak self] completion in
                 guard let self = self else { return }
                 self.handleCompletion(completion)

@@ -11,7 +11,7 @@ import Combine
 class TodosVM_Closure: ObservableObject {
     
     init() {
-        self.addTodoMultipart()
+        self.fetchTodos()
     }
     
     private func handleError(_ err: Error) {

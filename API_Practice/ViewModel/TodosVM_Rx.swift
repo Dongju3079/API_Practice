@@ -16,7 +16,7 @@ class TodosVM_Rx: ObservableObject {
     let disposeBag = DisposeBag()
     
     init() {
-        deleteTodo()
+        fetchTodos()
     }
     
     private func handleError(_ err: Error) {
