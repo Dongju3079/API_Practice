@@ -7,6 +7,8 @@
 
 import Foundation
 import MultipartForm
+import RxSwift
+import Combine
 
 extension TodosAPI_Closure {
     
@@ -293,10 +295,10 @@ extension TodosAPI_Closure {
     // MARK: - API 연쇄 호출
     static func addATodoAndFetchTodos(title: String,
                                       isDone: Bool = false,
-                                      completion: @escaping (Result<BaseListResponse<Todo>, ApiError>) -> Void){
+                                      completion: @escaping (Result<ListResponse, ApiError>) -> Void){
         self.addTodoClosureByJson(content: title, isDone: isDone) { result in
             switch result {
-            case .success(let todoResponse):
+            case .success(_):
                 self.fetchTodosClosure { result in
                     switch result {
                     case .success(let listResponse):
@@ -338,6 +340,420 @@ extension TodosAPI_Closure {
             completion(.success(deleteTodos))
         }
         
+    }
+    
+    // MARK: - Closure To Async
+    
+    static func fetchTodosClosureToAsync() async -> ResultListData {
+        return await withCheckedContinuation { (continuation: CheckedContinuation<ResultListData, Never>) in
+            fetchTodosClosure { result in
+                continuation.resume(returning: result)
+            }
+        }
+    }
+    
+    static func fetchTodosClosureToAsyncWithError() async throws -> ListResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ListResponse, Error>) in
+            fetchTodosClosure { result in
+                switch result {
+                case .success(let data):
+                    continuation.resume(returning: data)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    static func addTodosClosureToAsyncWithError(content: String, isDone: Bool = false) async throws -> TodoResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<TodoResponse, Error>) in
+            self.addTodoClosureByJson(content: content) { result in
+                switch result {
+                case .success(let todoData):
+                    continuation.resume(returning: todoData)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    static func deleteTodoClosureToAsyncWithError(id: Int) async throws -> TodoResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<TodoResponse, Error>) in
+            self.deleteTodoClosure(id: id) { result in
+                switch result {
+                case .success(let todoData):
+                    continuation.resume(returning: todoData)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    static func searchTodosClosureToAsyncWithError(id: Int) async throws -> TodoResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<TodoResponse, Error>) in
+            self.searchTodoClosure(id: id) { result in
+                switch result {
+                case .success(let todoData):
+                    continuation.resume(returning: todoData)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    static func editTodosClosureToAsyncWithError(id: Int, content: String, isDone: Bool = false) async throws -> TodoResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<TodoResponse, Error>) in
+            self.editTodoClosureEncoded(id: id, content: content, isDone: isDone) { result in
+                switch result {
+                case .success(let todoData):
+                    continuation.resume(returning: todoData)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    static func addTodoAndFetchListClosureToAsync(content: String, isDone: Bool = false) async throws -> ListResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ListResponse, Error>) in
+            self.addATodoAndFetchTodos(title: content) { result in
+                switch result {
+                case .success(let success):
+                    continuation.resume(returning: success)
+                case .failure(let failure):
+                    continuation.resume(throwing: failure)
+                }
+            }
+        }
+    }
+    
+    static func deleteTodosClosureToAsync(id: [Int]) async throws -> [Todo] {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Todo], Error>) in
+            self.deleteTodosClosure(id: id) { result in
+                switch result {
+                case .success(let todos):
+                    continuation.resume(returning: todos)
+                case .failure(let err):
+                    continuation.resume(throwing: err)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Closure To Rx
+    
+    static func fetchTodosClosureToRx() -> Observable<ResultListData> {
+        return Observable.create { emitter in
+            self.fetchTodosClosure { result in
+                emitter.onNext(result)
+                emitter.onCompleted()
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func fetchTodosClosureToRxWithError() -> Observable<ListResponse> {
+        return Observable.create { emitter in
+            fetchTodosClosure { result in
+                switch result {
+                case .success(let listData):
+                    emitter.onNext(listData)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func addTodosClosureToRxWithError(content: String, isDone: Bool = false) -> Observable<TodoResponse> {
+        return Observable.create { emitter in
+            self.addTodoClosureByJson(content: content) { result in
+                switch result {
+                case .success(let data):
+                    emitter.onNext(data)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func deleteTodoClosureToRxWithError(id: Int) -> Observable<TodoResponse> {
+        return Observable.create { emitter in
+            self.deleteTodoClosure(id: id) { result in
+                switch result {
+                case .success(let data):
+                    emitter.onNext(data)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func searchTodosClosureToRxWithError(id: Int) -> Observable<TodoResponse> {
+        return Observable.create { emitter in
+            self.searchTodoClosure(id: id) { result in
+                switch result {
+                case .success(let data):
+                    emitter.onNext(data)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func editTodosClosureToRxWithError(id: Int, content: String, isDone: Bool = false) -> Observable<Todo> {
+        return Observable.create { (emitter: AnyObserver<TodoResponse>) in
+            self.editTodoClosureByJson(id: id, content: content, isDone: isDone) { result in
+                switch result {
+                case .success(let data):
+                    emitter.onNext(data)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }.compactMap { $0.data }
+    }
+    
+    static func addTodoAndFetchListClosureToRx(content: String, isDone: Bool = false) -> Observable<[Todo]> {
+        return Observable.create { (emitter: AnyObserver<ListResponse>) in
+            self.addATodoAndFetchTodos(title: content) { result in
+                switch result {
+                case .success(let listData):
+                    emitter.onNext(listData)
+                    emitter.onCompleted()
+                case .failure(let err):
+                    emitter.onError(err)
+                }
+            }
+            return Disposables.create()
+        }
+        .compactMap {
+            guard let todos = $0.data else {
+                throw ApiError.noContent
+            }
+            return $0.data
+        }
+        .catch { err in
+            if let apiError = err as? ApiError {
+                throw apiError
+            } else {
+                throw err
+            }
+        }
+    }
+    
+    static func deleteTodosClosureToRx(id: [Int]) -> Observable<ResultTodos> {
+        return Observable.create { emitter in
+            self.deleteTodosClosure(id: id) { result in
+                emitter.onNext(result)
+            }
+            return Disposables.create()
+        }
+    }
+    
+    // MARK: - Closure To Combine
+    
+    // 에러 처리 O
+    static func fetchTodosClosureToCombineWithError() -> AnyPublisher<ListResponse, ApiError> {
+        return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
+            fetchTodosClosure { result in
+                
+                // 1번
+                promise(result)
+                
+                // 2번
+//                switch result {
+//                case .success(let listData):
+//                    promise(.success(listData))
+//                case .failure(let err):
+//                    promise(.failure(err))
+//                }
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    // 에러 처리 O(형태 변경)
+    static func fetchTodosClosureToCombineMapError() -> AnyPublisher<ListResponse, Error> {
+        return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
+            fetchTodosClosure { result in
+                promise(result)
+            }
+        }
+        .tryMap({ listResponse in
+            guard let todos = listResponse.data else {
+                throw ApiError.noContent
+            }
+            
+            return listResponse
+        })
+        .mapError({ err in
+            if let _ = err as? ApiError {
+                return ApiError.unauthorized
+            }
+            
+            return err
+        })
+        .eraseToAnyPublisher()
+    }
+    
+    // 에러 처리 X
+    static func fetchTodosClosureToCombineNoError() -> AnyPublisher<[Todo], Never> {
+        return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
+            fetchTodosClosure { result in
+                promise(result)
+            }
+        }
+        .map({ $0.data ?? [] })
+        
+        // 1번
+//        .catch({ err in
+//            return Just([])
+//        })
+        // 2번
+        .replaceError(with: [])
+        .eraseToAnyPublisher()
+    }
+    
+    static func addTodosClosureToCombineWithError(content: String, isDone: Bool = false) -> AnyPublisher<TodoResponse, ApiError> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            addTodoClosureByJson(content: content) { result in
+                promise(result)
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    static func addTodosClosureToCombineNoError(content: String, isDone: Bool = false) -> AnyPublisher<Todo?, Never> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            addTodoClosureByJson(content: content) { result in
+                promise(result)
+            }
+        }
+        .map({ $0.data })
+        .replaceError(with: nil)
+        .eraseToAnyPublisher()
+    }
+    
+    static func deleteTodoClosureToCombineWithError(id: Int)  -> AnyPublisher<TodoResponse, ApiError> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            deleteTodoClosure(id: id) { result in
+                promise(result)
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    static func searchTodosClosureToCombineWithError(id: Int)  -> AnyPublisher<TodoResponse, ApiError> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            searchTodoClosure(id: id) { result in
+                promise(result)
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    static func editTodosClosureToCombineWithError(id: Int, content: String, isDone: Bool = false)  -> AnyPublisher<Todo?, Error> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            editTodoClosureByJson(id: id, content: content, isDone: isDone) { result in
+                promise(result)
+            }
+        }
+        .tryMap({ todoResponse in
+            guard let todo = todoResponse.data else {
+                throw ApiError.noContent
+            }
+            
+            return todo
+        })
+        .mapError({ err in
+            if let apiError = err as? ApiError {
+                return apiError
+            }
+            
+            return ApiError.unknown(err)
+        })
+        .eraseToAnyPublisher()
+    }
+    
+    static func editTodosClosureToCombineWithError(id: Int, content: String, isDone: Bool = false)  -> AnyPublisher<Todo?, Never> {
+        return Future { (promise: @escaping (Result<TodoResponse, ApiError>) -> Void) in
+            editTodoClosureByJson(id: id, content: content, isDone: isDone) { result in
+                promise(result)
+            }
+        }
+        .map({ $0.data })
+        .replaceError(with: nil)
+        .eraseToAnyPublisher()
+    }
+    
+    static func addTodoAndFetchListClosureToCombine(content: String, isDone: Bool = false)  -> AnyPublisher<[Todo], Error> {
+        return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
+            addATodoAndFetchTodos(title: content) { result in
+                promise(result)
+            }
+        }
+        .tryMap({ todoResponse in
+            guard let todo = todoResponse.data else {
+                throw ApiError.noContent
+            }
+            
+            return todo
+        })
+        .mapError({ err in
+            if let apiError = err as? ApiError {
+                return apiError
+            }
+            
+            return ApiError.unknown(err)
+        })
+        .eraseToAnyPublisher()
+    }
+    
+    static func addTodoAndFetchListClosureToCombineNoError(content: String, isDone: Bool = false)  -> AnyPublisher<[Todo], Never> {
+        return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
+            addATodoAndFetchTodos(title: content) { result in
+                promise(result)
+            }
+        }
+        .map({ $0.data ?? [] })
+        .replaceError(with: [])
+        .eraseToAnyPublisher()
+    }
+    
+    static func deleteTodosClosureToCombine(id: [Int])  -> AnyPublisher<[Todo], ApiError> {
+        return Future { (promise: @escaping (Result<[Todo], ApiError>) -> Void) in
+            deleteTodosClosure(id: id) { result in
+                promise(result)
+            }
+        }
+        .tryMap({ result in
+            if result.isEmpty {
+                throw ApiError.noContent
+            } else {
+                return result
+            }
+        })
+        .mapError({ err in
+            if let apiError = err as? ApiError {
+                return apiError
+            }
+            
+            return ApiError.unknown(err)
+        })
+        .eraseToAnyPublisher()
     }
 }
 
@@ -385,3 +801,7 @@ extension TodosAPI_Closure {
         }
     }
 }
+
+ 
+
+

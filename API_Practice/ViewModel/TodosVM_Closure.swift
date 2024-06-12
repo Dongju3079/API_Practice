@@ -6,12 +6,15 @@
 //
 
 import Foundation
+import RxSwift
 import Combine
 
 class TodosVM_Closure: ObservableObject {
     
+    let disposeBag = DisposeBag()
+    
     init() {
-        self.fetchTodos()
+        self.addTodoAndFetchListClosureToRx()
     }
     
     private func handleError(_ err: Error) {
@@ -136,11 +139,45 @@ extension TodosVM_Closure {
         TodosAPI_Closure.deleteTodosClosure(id: [5164, 5165, 5166]) { result in
             switch result {
             case .success(let success):
-                return
+                print("테스트 deleteTodo : \(success)")
             case .failure(let failure):
-                return
+                self.handleError(failure)
             }
         }
+    }
+    
+    private func addTodoAndFetchListClosureToAsync() {
+        Task {
+            do {
+                let result = try await TodosAPI_Closure.addTodoAndFetchListClosureToAsync(content: "클로저 -> async 변환")
+                print("테스트 result : \(result)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func deleteTodoAndFetchListClosureToAsync() {
+        Task {
+            do {
+                let result = try await TodosAPI_Closure.deleteTodosClosureToAsync(id: [5322, 5320])
+                print("테스트 result : \(result)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func addTodoAndFetchListClosureToRx() {
+        TodosAPI_Closure.addTodosClosureToRxWithError(content: "Closure To Rx")
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { result in
+                print("테스트 result : \(result)")
+            }, onError: { [weak self] err in
+                guard let self = self else { return }
+                self.handleError(err)
+            })
+            .disposed(by: disposeBag)
     }
     
 }

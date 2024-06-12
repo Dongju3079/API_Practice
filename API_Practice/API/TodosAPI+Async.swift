@@ -318,121 +318,55 @@ extension TodosAPI_Async {
         }
     }
     
-    // Merge
-    // 여러개의 퍼블리셔의 값을 각각 내려줌 (return type 단일 요소)
-//    static func deleteTodosMerge(selectedTodos: [Int]) -> AnyPublisher<Int, ApiError> {
-//
-//        let apiCallObservables = selectedTodos.map { id -> AnyPublisher<Int?, ApiError> in
-//            return self.deleteTodo(id: id)
-//                .map { $0.data?.id }
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return Publishers.MergeMany(apiCallObservables)
-//            .compactMap { $0 }
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func deleteTodosMergeNoError(selectedTodos: [Int]) -> AnyPublisher<Int, Never> {
-//
-//        let apiCallObservables = selectedTodos.map { id -> AnyPublisher<Int?, Never> in
-//            return self.deleteTodo(id: id)
-//                .map { $0.data?.id }
-//                .replaceError(with: nil)
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return Publishers.MergeMany(apiCallObservables)
-//            .compactMap { $0 }
-//            .eraseToAnyPublisher()
-//    }
+    static func searchTodosTaskGroupWithError(todosId: [Int]) async throws -> [Todo] {
+        
+        try await withThrowingTaskGroup(of: Todo?.self) { (group: inout ThrowingTaskGroup<Todo?, any Error>) in
+            
+            for atodoId in todosId {
+                group.addTask(operation: {
+                    let result = try await self.searchTodo(id: atodoId).data
+                    return result
+                })
+            }
+            
+            var searchTodos: [Todo] = []
+            
+            for try await singleValue in group {
+                if let value = singleValue {
+                    searchTodos.append(value)
+                }
+            }
+            
+            return searchTodos
+        }
+    }
     
-    // Zip
-    // combine에서도 zip 기능이 있지만 매개변수로 받을 수 있는 최대 갯수는 4개
-    // 초과되는 경우 해결방법은 zip을 중첩시켜서 사용하면 해결할 수 있다.
-    // 예시 : zip3(zip1(publisher1, publisher2, publisher3), zip2(publisher4, publisher5, publisher6))
-    // CombineExt 라이브러리에 있는 zip을 사용해서 편리하게 이용가능
-    // 여러개의 퍼블리셔의 값을 하나로 내려줌 (return type 배열 요소)
-//    static func deleteTodosZip(selectedTodos: [Int]) -> AnyPublisher<[Int], ApiError> {
-//
-//        let apiCallPublishers = selectedTodos.map { id -> AnyPublisher<Int?, ApiError> in
-//            return self.deleteTodo(id: id)
-//                .map { $0.data?.id }
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return apiCallPublishers.zip()
-//            .map({ $0.compactMap { $0 } })
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func deleteTodosZipNoError(selectedTodos: [Int]) -> AnyPublisher<[Int], Never> {
-//
-//        let apiCallPublishers = selectedTodos.map { id -> AnyPublisher<Int?, Never> in
-//            return self.deleteTodo(id: id)
-//                .map { $0.data?.id }
-//                .replaceError(with: nil)
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return apiCallPublishers.zip()
-//            .map({ $0.compactMap { $0 } })
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func searchTodosMerge(todosId: [Int]) -> AnyPublisher<Todo, ApiError> {
-//        
-//        let apiCallPublishers = todosId.map { id -> AnyPublisher<Todo?, ApiError> in
-//            return searchTodo(id: id)
-//                .map { $0.data }
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return Publishers.MergeMany(apiCallPublishers)
-//            .compactMap { $0 }
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func searchTodosMergeNoError(todosId: [Int]) -> AnyPublisher<Todo, Never> {
-//        
-//        let apiCallPublishers = todosId.map { id -> AnyPublisher<Todo?, Never> in
-//            return searchTodo(id: id)
-//                .map { $0.data }
-//                .replaceError(with: nil)
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return Publishers.MergeMany(apiCallPublishers)
-//            .compactMap { $0 }
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func searchTodosZip(todosId: [Int]) -> AnyPublisher<[Todo], ApiError> {
-//        
-//        let apiCallPublishers = todosId.map { id -> AnyPublisher<Todo?, ApiError> in
-//            return searchTodo(id: id)
-//                .map { $0.data }
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return apiCallPublishers.zip()
-//            .map { $0.compactMap { $0 } }
-//            .eraseToAnyPublisher()
-//    }
-//    
-//    static func searchTodosZipNoError(todosId: [Int]) -> AnyPublisher<[Todo], Never> {
-//        
-//        let apiCallPublishers = todosId.map { id -> AnyPublisher<Todo?, Never> in
-//            return searchTodo(id: id)
-//                .map { $0.data }
-//                .replaceError(with: nil)
-//                .eraseToAnyPublisher()
-//        }
-//        
-//        return apiCallPublishers.zip()
-//            .map { $0.compactMap { $0 } }
-//            .eraseToAnyPublisher()
-//    }
+    static func searchTodosTaskGroupNoError(todosId: [Int]) async -> [Todo] {
+        
+        await withTaskGroup(of: Todo?.self) { (group: inout TaskGroup<Todo?>) in
+            
+            for atodoId in todosId {
+                group.addTask(operation: {
+                    do {
+                        let result = try await self.searchTodo(id: atodoId).data
+                        return result
+                    } catch {
+                        return nil
+                    }
+                })
+            }
+            
+            var searchTodos: [Todo] = []
+            
+            for await singleValue in group {
+                if let value = singleValue {
+                    searchTodos.append(value)
+                }
+            }
+            
+            return searchTodos
+        }
+    }
     
 }
 
