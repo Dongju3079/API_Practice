@@ -200,7 +200,7 @@ extension TodosAPI_Async {
     
     static func addTodoAndFetchTodos(content: String) async throws -> [Todo] {
         
-        let addTodoResponse = try await addTodoByJson(content: content)
+        let _ = try await addTodoByJson(content: content)
         let fetchTodoResponse = try await fetchTodos()
         
         guard let todos = fetchTodoResponse.data else {
@@ -224,7 +224,100 @@ extension TodosAPI_Async {
             return []
         }
     }
+    
+    // MARK: - API 동시 호출
+    
+    // async 배열 활용
+    static func deleteTodosWithError(selectedTodosId: [Int]) async throws -> [Todo] {
+        
+        async let firstTask = self.deleteTodo(id: 2709)
+        async let secondTask = self.deleteTodo(id: 2710)
+        async let thirdTask = self.deleteTodo(id: 2708)
+        
+        let result = try await [firstTask.data,
+                                secondTask.data,
+                                thirdTask.data].compactMap { $0 }
+        
+        return result
+    }
+    
+    static func deleteTodosNoError(selectedTodosId: [Int]) async -> [Todo] {
+        async let firstTask = self.deleteTodo(id: 2709)
+        async let secondTask = self.deleteTodo(id: 2710)
+        async let thirdTask = self.deleteTodo(id: 2708)
+        
+        do {
+            let result = try await [firstTask.data,
+                                    secondTask.data,
+                                    thirdTask.data].compactMap { $0 }
+            
+            return result
+        } catch {
+            return []
+        }
+    }
 
+    // TaskGroup 활용
+    
+    static func deleteTodosWithThrowingTaskGroup(selectedTodosId: [Int]) async throws -> [Todo] {
+        
+        // Error를 던지는 작업 그룹
+        try await withThrowingTaskGroup(of: Todo?.self) { (group: inout ThrowingTaskGroup<Todo?, any Error>) -> [Todo] in
+            
+            // 그룹에 작업을 추가
+            for aTodoId in selectedTodosId {
+                group.addTask(operation: {
+                    let childTaskResult = try await self.deleteTodo(id: aTodoId)
+                    return childTaskResult.data
+                })
+            }
+            
+            
+            var deleteTodoIds: [Todo] = []
+            
+            // await 동기적 실행
+            for try await singleValue in group {
+                if let value = singleValue {
+                    deleteTodoIds.append(value)
+                }
+            }
+            
+            return deleteTodoIds
+        }
+        
+    }
+    
+    static func deleteTodosWithTaskGroup(selectedTodosId: [Int]) async -> [Todo] {
+        
+        // return에 error가 없는 타입
+        await withTaskGroup(of: Todo?.self) { (group: inout TaskGroup<Todo?>) -> [Todo] in
+            
+            // 그룹에 작업을 추가
+            for aTodoId in selectedTodosId {
+                group.addTask(operation: {
+                    do {
+                        let childTaskResult = try await self.deleteTodo(id: aTodoId)
+                        return childTaskResult.data
+                    } catch {
+                        return nil
+                    }
+                })
+            }
+            
+            
+            var deleteTodoIds: [Todo] = []
+            
+            // await 동기적 실행
+            for await singleValue in group {
+                if let value = singleValue {
+                    deleteTodoIds.append(value)
+                }
+            }
+            
+            return deleteTodoIds
+        }
+    }
+    
     // Merge
     // 여러개의 퍼블리셔의 값을 각각 내려줌 (return type 단일 요소)
 //    static func deleteTodosMerge(selectedTodos: [Int]) -> AnyPublisher<Int, ApiError> {
@@ -422,6 +515,7 @@ extension TodosAPI_Async {
         return ApiError.unknown(err)
     }
 }
+
 
 
 

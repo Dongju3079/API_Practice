@@ -12,7 +12,7 @@ import CombineExt
 class TodosVM_Async: ObservableObject {
     
     init() {
-        deleteTodo()
+        deleteTodosWithGroupNoError()
     }
     
     private func handleError(_ err: Error) {
@@ -54,6 +54,46 @@ extension TodosVM_Async {
         }
     }
     
+    private func addTodoAndFetch() {
+        Task {
+            do {
+                let todoList = try await TodosAPI_Async.addTodoAndFetchTodos(content: "async add and fetch")
+                print("테스트 todoList : \(todoList)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func deleteTodos() {
+        Task {
+            do {
+                let result = try await TodosAPI_Async.deleteTodosWithError(selectedTodosId: [])
+                print("테스트 result : \(result)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func deleteTodosWithGroup() {
+        Task {
+            do {
+                let result = try await TodosAPI_Async.deleteTodosWithThrowingTaskGroup(selectedTodosId: [2712, 2752, 2753])
+                print("테스트 result : \(result)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func deleteTodosWithGroupNoError() {
+        Task {
+            
+            let result = await TodosAPI_Async.deleteTodosWithTaskGroup(selectedTodosId: [2754, 2755, 2757, 2762])
+            print("테스트 result : \(result)")
+        }
+    }
 //    private func fetchTodosByResultType() {
 //        TodosAPI_Combine.fetchTodosResultType()
 //            .sink { [weak self ]result in
@@ -80,7 +120,7 @@ extension TodosVM_Async {
     private func addTodoJson() {
         Task {
             do {
-                let todosResponse = try await TodosAPI_Async.addTodoByJson(content: "async add", isDone: true)
+                let todosResponse = try await TodosAPI_Async.addTodoByJson(content: "글자만 가능", isDone: true)
                 print(#fileID, #function, #line, "-todos: \(todosResponse) ")
             } catch {
                 self.handleError(error)
