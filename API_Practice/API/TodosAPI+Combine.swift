@@ -391,7 +391,48 @@ extension TodosAPI_Combine {
             .map { $0.compactMap { $0 } }
             .eraseToAnyPublisher()
     }
+}
+
+// MARK: - Combine to Async
+extension TodosAPI_Combine {
     
+    static func fetchTodosCombineToAsync() async -> ResultListData {
+        return await withCheckedContinuation { (continuation: CheckedContinuation<ResultListData, Never>) in
+            
+            var cancellabel: AnyCancellable? = nil
+            
+            cancellabel = self.fetchTodosResultType()
+                .sink { result in
+                    continuation.resume(returning: result)
+                    cancellabel?.cancel()
+                }
+        }
+    }
+    
+    static func fetchTodosWithErrorCombineToAsync() async throws -> ListResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ListResponse, Error>) in
+            
+            // cancellabel 생성
+            var cancellable : AnyCancellable? = nil
+            
+            // 구독할 것 담기
+            cancellable = fetchTodos()
+                .sink(receiveCompletion: { completion in
+                    switch completion {
+                    case .finished:
+                        print("success receive data")
+                    case .failure(let failure):
+                        continuation.resume(throwing: failure)
+                    }
+                    // 작업완료 후 해제하기(필수)
+                    cancellable?.cancel()
+                }, receiveValue: { listData in
+                    continuation.resume(returning: listData)
+                })
+            
+            
+        }
+    }
 }
 
 // MARK: - Hepler

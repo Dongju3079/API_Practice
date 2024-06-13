@@ -40,6 +40,10 @@
 		525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80BE2C103EA80083C79D /* TodosVM_Rx.swift */; };
 		525B80C12C11DC740083C79D /* TodosAPI+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */; };
 		525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C22C11DE860083C79D /* TodosVM_Combine.swift */; };
+		528B96482C19D06800DF249D /* AnyPublisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */; };
+		528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96492C1A98A100DF249D /* ObservableType+Ext.swift */; };
+		52FDF0B22C1AB81D00A7C3E1 /* RxCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 52FDF0B12C1AB81D00A7C3E1 /* RxCombine */; };
+		52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +76,9 @@
 		525B80BE2C103EA80083C79D /* TodosVM_Rx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Rx.swift; sourceTree = "<group>"; };
 		525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodosAPI+Combine.swift"; sourceTree = "<group>"; };
 		525B80C22C11DE860083C79D /* TodosVM_Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Combine.swift; sourceTree = "<group>"; };
+		528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyPublisher+Ext.swift"; sourceTree = "<group>"; };
+		528B96492C1A98A100DF249D /* ObservableType+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ObservableType+Ext.swift"; sourceTree = "<group>"; };
+		52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +90,7 @@
 				525B80B52C0F047E0083C79D /* RxCocoa in Frameworks */,
 				525B80B92C0F047E0083C79D /* RxSwift in Frameworks */,
 				5201FD362C1470BA00E32902 /* CombineExt in Frameworks */,
+				52FDF0B22C1AB81D00A7C3E1 /* RxCombine in Frameworks */,
 				525B80AB2C0EFE330083C79D /* MultipartForm in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -198,6 +206,9 @@
 			children = (
 				525B80AD2C0EFFCD0083C79D /* Url+Ext.swift */,
 				525B80BA2C0F4C840083C79D /* UrlRequest+Ext.swift */,
+				528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */,
+				52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */,
+				528B96492C1A98A100DF249D /* ObservableType+Ext.swift */,
 			);
 			path = Ext;
 			sourceTree = "<group>";
@@ -235,6 +246,7 @@
 				525B80B62C0F047E0083C79D /* RxRelay */,
 				525B80B82C0F047E0083C79D /* RxSwift */,
 				5201FD352C1470BA00E32902 /* CombineExt */,
+				52FDF0B12C1AB81D00A7C3E1 /* RxCombine */,
 			);
 			productName = API_Practice;
 			productReference = 525B806F2C074D790083C79D /* API_Practice.app */;
@@ -268,6 +280,7 @@
 				525B80A92C0EFE330083C79D /* XCRemoteSwiftPackageReference "MultipartForm" */,
 				525B80B32C0F047E0083C79D /* XCRemoteSwiftPackageReference "RxSwift" */,
 				5201FD342C1470BA00E32902 /* XCRemoteSwiftPackageReference "CombineExt" */,
+				52FDF0B02C1AB81D00A7C3E1 /* XCRemoteSwiftPackageReference "RxCombine" */,
 			);
 			productRefGroup = 525B80702C074D790083C79D /* Products */;
 			projectDirPath = "";
@@ -312,11 +325,14 @@
 				525B80B22C0F04510083C79D /* TodosVM_Closure.swift in Sources */,
 				525B80BD2C103C8C0083C79D /* TodosAPI+Rx.swift in Sources */,
 				525B809D2C08DEAD0083C79D /* TodoResponse.swift in Sources */,
+				52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */,
 				525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */,
 				525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */,
 				525B80BB2C0F4C850083C79D /* UrlRequest+Ext.swift in Sources */,
 				525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */,
 				525B80942C085ECF0083C79D /* Button+Style.swift in Sources */,
+				528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */,
+				528B96482C19D06800DF249D /* AnyPublisher+Ext.swift in Sources */,
 				525B80912C0859850083C79D /* TodosView.swift in Sources */,
 				525B80992C08CF4B0083C79D /* TodoRow.swift in Sources */,
 				525B80882C084C020083C79D /* TodoCell.swift in Sources */,
@@ -554,6 +570,14 @@
 				minimumVersion = 6.7.1;
 			};
 		};
+		52FDF0B02C1AB81D00A7C3E1 /* XCRemoteSwiftPackageReference "RxCombine" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CombineCommunity/RxCombine.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -581,6 +605,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 525B80B32C0F047E0083C79D /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxSwift;
+		};
+		52FDF0B12C1AB81D00A7C3E1 /* RxCombine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52FDF0B02C1AB81D00A7C3E1 /* XCRemoteSwiftPackageReference "RxCombine" */;
+			productName = RxCombine;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

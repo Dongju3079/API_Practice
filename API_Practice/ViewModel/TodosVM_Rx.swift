@@ -10,13 +10,15 @@ import Combine
 import RxSwift
 import RxCocoa
 import RxRelay
+import RxCombine
 
 class TodosVM_Rx: ObservableObject {
     
     let disposeBag = DisposeBag()
+    var subscriptions = Set<AnyCancellable>()
     
     init() {
-        fetchTodos()
+        fetchTodoRxToCombine()
     }
     
     private func handleError(_ err: Error) {
@@ -36,6 +38,7 @@ extension TodosVM_Rx {
     
     private func searchTodos() {
         TodosAPI_Rx.searchTodosRx(todosId: [2691, 2701, 2708, 2709])
+            .debug()
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { todos in
                 todos.forEach {
@@ -191,16 +194,39 @@ extension TodosVM_Rx {
             }
         }
     }
-    
-//    private func deleteTodos() {
-//        TodosAPI_Closure.deleteTodosClosure(id: [5164, 5165, 5166]) { result in
-//            switch result {
-//            case .success(let success):
-//                return
-//            case .failure(let failure):
-//                return
-//            }
-//        }
-//    }
-    
 }
+
+// MARK: - Rx to Async
+extension TodosVM_Rx {
+    
+    private func fetchTodoRxToAsync() {
+        Task {
+            do {
+                let _ = try await TodosAPI_Rx.fetchTodosRxAddErrorTask().toAsync()
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+}
+
+// MARK: - Rx to Combine
+extension TodosVM_Rx {
+    private func fetchTodoRxToCombine() {
+        TodosAPI_Rx.fetchTodosRxAddErrorTask()
+            .publisher
+            .sink {[weak self] completion in
+                guard let self = self else { return }
+                switch completion {
+                case .finished:
+                    print("테스트 finished")
+                case .failure(let err):
+                    self.handleError(err)
+                }
+            } receiveValue: { listResponse in
+                print("테스트 listData : \(listResponse)")
+            }
+            .store(in: &subscriptions)
+    }
+}
+

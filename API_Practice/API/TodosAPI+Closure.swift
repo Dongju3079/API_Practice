@@ -45,8 +45,8 @@ extension TodosAPI_Closure {
     }
     
     static func addTodoClosureByMultipart(content: String,
-                               isDone: Bool = false,
-                               completion: @escaping (ResultTodoData) -> Void) {
+                                          isDone: Bool = false,
+                                          completion: @escaping (ResultTodoData) -> Void) {
         
         guard let url = URL(string: baseUrl + "/todos") else {
             return completion(.failure(.notAllowedUrl))
@@ -55,15 +55,15 @@ extension TodosAPI_Closure {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
-
+        
         let form = MultipartForm(parts: [
             MultipartForm.Part(name: "title", value: content),
             MultipartForm.Part(name: "is_done", value: "\(isDone)")
         ])
-
+        
         // 데이터 형식
         urlRequest.addValue(form.contentType, forHTTPHeaderField: "Content-Type")
-
+        
         // 실제 데이터
         urlRequest.httpBody = form.bodyData
         
@@ -81,12 +81,12 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
+        
     }
     
     static func addTodoClosureByJson(content: String,
-                               isDone: Bool = false,
-                               completion: @escaping (ResultTodoData) -> Void) {
+                                     isDone: Bool = false,
+                                     completion: @escaping (ResultTodoData) -> Void) {
         
         guard let url = URL(string: baseUrl + "/todos-json") else {
             return completion(.failure(.notAllowedUrl))
@@ -96,9 +96,9 @@ extension TodosAPI_Closure {
         urlRequest.httpMethod = "POST"
         urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
         urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
+        
         let requestParams : [String : Any] = ["title": content, "is_done" : "\(isDone)"]
-
+        
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: requestParams, options: [.prettyPrinted])
             
@@ -122,7 +122,7 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
+        
     }
     
     static func searchTodosClosure(searchTerm: String,
@@ -155,7 +155,7 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
+        
     }
     
     static func searchTodoClosure(id: Int,
@@ -184,13 +184,13 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
+        
     }
     
     static func editTodoClosureEncoded(id: Int,
-                                content: String,
-                                isDone: Bool,
-                                completion: @escaping (ResultTodoData) -> Void) {
+                                       content: String,
+                                       isDone: Bool,
+                                       completion: @escaping (ResultTodoData) -> Void) {
         
         guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
             return completion(.failure(.notAllowedUrl))
@@ -218,13 +218,13 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
+        
     }
-
+    
     static func editTodoClosureByJson(id: Int,
-                                content: String,
-                                isDone: Bool,
-                                completion: @escaping (ResultTodoData) -> Void) {
+                                      content: String,
+                                      isDone: Bool,
+                                      completion: @escaping (ResultTodoData) -> Void) {
         
         guard let url = URL(string: baseUrl + "/todos-json" + "/\(id)") else {
             return completion(.failure(.notAllowedUrl))
@@ -258,8 +258,8 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
-
+        
+        
     }
     
     static func deleteTodoClosure(id: Int,
@@ -288,8 +288,8 @@ extension TodosAPI_Closure {
                 }
             }
         }.resume()
-
-
+        
+        
     }
     
     // MARK: - API 연쇄 호출
@@ -336,13 +336,15 @@ extension TodosAPI_Closure {
         
         group.notify(queue: .main) {
             print("테스트 deleteTodo : \(deleteTodos)")
-
+            
             completion(.success(deleteTodos))
         }
         
     }
-    
-    // MARK: - Closure To Async
+}
+
+// MARK: - Closure To Async
+extension TodosAPI_Closure {
     
     static func fetchTodosClosureToAsync() async -> ResultListData {
         return await withCheckedContinuation { (continuation: CheckedContinuation<ResultListData, Never>) in
@@ -442,8 +444,10 @@ extension TodosAPI_Closure {
             }
         }
     }
-    
-    // MARK: - Closure To Rx
+}
+
+// MARK: - Closure To Rx
+extension TodosAPI_Closure {
     
     static func fetchTodosClosureToRx() -> Observable<ResultListData> {
         return Observable.create { emitter in
@@ -566,8 +570,10 @@ extension TodosAPI_Closure {
             return Disposables.create()
         }
     }
-    
-    // MARK: - Closure To Combine
+}
+
+// MARK: - Closure To Combine
+extension TodosAPI_Closure {
     
     // 에러 처리 O
     static func fetchTodosClosureToCombineWithError() -> AnyPublisher<ListResponse, ApiError> {

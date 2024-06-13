@@ -11,8 +11,11 @@ import CombineExt
 
 class TodosVM_Async: ObservableObject {
     
+    var subscriptions = Set<AnyCancellable>()
+    
     init() {
-        deleteTodosWithGroupNoError()
+       
+        
     }
     
     private func handleError(_ err: Error) {
@@ -24,7 +27,6 @@ class TodosVM_Async: ObservableObject {
         
         print(apiError.info)
     }
-    
 }
 
 // MARK: - fetch Data
@@ -94,29 +96,7 @@ extension TodosVM_Async {
             print("테스트 result : \(result)")
         }
     }
-//    private func fetchTodosByResultType() {
-//        TodosAPI_Combine.fetchTodosResultType()
-//            .sink { [weak self ]result in
-//                guard let self = self else { return }
-//                switch result {
-//                case .success(let todosResponse):
-//                    print(#fileID, #function, #line, "-todosResponse: \(todosResponse) ")
-//                case .failure(let err):
-//                    self.handleError(err)
-//                }
-//            }.store(in: &subscriptions)
-//    }
-//        
-//    private func addTodoMultipart() {
-//        TodosAPI_Combine.addTodoByMultipart(content: "6.8 addTest", isDone: true)
-//            .sink { [weak self] completion in
-//                guard let self = self else { return }
-//                self.handleCompletion(completion)
-//            } receiveValue: { todoResponse in
-//                print(#fileID, #function, #line, "-todoResponse: \(todoResponse) ")
-//            }.store(in: &subscriptions)
-//    }
-//    
+ 
     private func addTodoJson() {
         Task {
             do {
@@ -128,28 +108,6 @@ extension TodosVM_Async {
             
         }
     }
-//    
-//    private func searchTodoById() {
-//        TodosAPI_Combine.searchTodo(id: 5291)
-//            .sink { [weak self] completion in
-//                guard let self = self else { return }
-//                self.handleCompletion(completion)
-//            } receiveValue: { todoResponse in
-//                print(#fileID, #function, #line, "-todoResponse: \(todoResponse) ")
-//            }.store(in: &subscriptions)
-//    }
-//
-//    private func searchTodosByTerm() {
-//        TodosAPI_Combine.searchTodos(searchTerm: "빡코딩")
-//            .sink { [weak self] completion in
-//                guard let self = self else { return }
-//                self.handleCompletion(completion)
-//            } receiveValue: { todoResponse in
-//                print(#fileID, #function, #line, "-todoResponse: \(todoResponse) ")
-//            }.store(in: &subscriptions)
-//    }
-//    
-//    
     private func editTodoEncoded() {
         Task {
             do {
@@ -172,38 +130,6 @@ extension TodosVM_Async {
             }
         }
     }
-//
-//    private func editTodoJson() {
-//        TodosAPI_Combine.editTodoByJson(id: 5292, content: "Edit Json", isDone: false)
-//            .sink { [weak self] completion in
-//                guard let self = self else { return }
-//                self.handleCompletion(completion)
-//            } receiveValue: { todoResponse in
-//                print(#fileID, #function, #line, "-todoResponse: \(todoResponse) ")
-//            }.store(in: &subscriptions)
-//    }
-//    
-//    private func searchTodos() {
-//        TodosAPI_Combine.deleteTodosMerge(selectedTodos: [5291, 4722, 4620, 9999])
-//            .sink { [weak self] completion in
-//                guard let self = self else { return }
-//                switch completion {
-//                case .failure(let err):
-//                    self.handleError(err)
-//                case .finished:
-//                    print(#fileID, #function, #line, "-succes data upload ")
-//                }
-//            } receiveValue: { todo in
-//                print(#fileID, #function, #line, "-todo : \(todo) ")
-//            }.store(in: &subscriptions)
-//    }
-//    
-//    private func searchTodosNoError() {
-//        TodosAPI_Combine.deleteTodosZipNoError(selectedTodos: [4610, 4609])
-//            .sink { todosId in
-//                print(#fileID, #function, #line, "-todosId: \(todosId) ")
-//            }.store(in: &subscriptions)
-//    }
 }
 
 extension TodosVM_Async {
@@ -214,6 +140,47 @@ extension TodosVM_Async {
         case .finished:
             print(#fileID, #function, #line, "-데이터 업로드 성공 ")
         }
+    }
+}
+
+// MARK: - Async To Combine
+extension TodosVM_Async {
+    private func fetchTodoAsyncToCombineNoParameter() {
+        TodosAPI_Async.genericFetchTodosAsyncToCombine(asyncTask: {
+            try await TodosAPI_Async.fetchTodos()
+        })
+        .sink { [weak self] completion in
+            guard let self = self else { return }
+            switch completion {
+            case .failure(let err):
+                self.handleError(err)
+            case .finished:
+                print("테스트 finished")
+            }
+        } receiveValue: { listResponse in
+            print("테스트 list : \(listResponse)")
+        }
+        .store(in: &subscriptions)
+    }
+    
+    
+    private func fetchTodoAsyncToCombine(page: Int) {
+        Just(page)
+            .mapAsync { value in
+                try await TodosAPI_Async.fetchTodos(page: value)
+            }
+        .sink { [weak self] completion in
+            guard let self = self else { return }
+            switch completion {
+            case .failure(let err):
+                self.handleError(err)
+            case .finished:
+                print("테스트 finished")
+            }
+        } receiveValue: { listResponse in
+            print("테스트 list : \(listResponse)")
+        }
+        .store(in: &subscriptions)
     }
 }
 

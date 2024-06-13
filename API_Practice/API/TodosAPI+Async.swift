@@ -21,7 +21,6 @@ extension TodosAPI_Async {
     static func fetchTodosResultType(page: Int = 1) async -> ResultListData {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
-            // eraseToAnyPublisher : Publisher wrapping
             return .failure(ApiError.notAllowedUrl)
         }
         
@@ -62,16 +61,12 @@ extension TodosAPI_Async {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "accept")
-    
-        // 리턴 앞에 throws가 있어서 do, catch 없이 사용하더라도 에러가 던져짐
-        // 단, 단순 에러를 던질 때 사용
-        // 에러를 가공해서 보내야 한다면 do, catch 를 사용해야 함
+ 
         let listResponse = try await executeRequest(request, ListResponse.self)
         
         return listResponse
     }
-    
-    
+ 
     static func addTodoByMultipart(content: String, isDone: Bool = false) async throws -> TodoResponse {
         
         guard let url = URL(string: baseUrl + "/todos") else {
@@ -97,9 +92,7 @@ extension TodosAPI_Async {
         
         return listResponse
     }
-    
-//    private static func decodeResponse
-    
+        
     static func addTodoByJson(content: String, isDone: Bool = false) async throws -> TodoResponse {
         
         guard let url = URL(string: baseUrl + "/todos-json") else {
@@ -213,7 +206,7 @@ extension TodosAPI_Async {
     static func addTodoAndFetchTodosNoError(content: String) async -> [Todo] {
         
         do {
-            let addTodoResponse = try await addTodoByJson(content: content)
+            let _ = try await addTodoByJson(content: content)
             let fetchTodoResponse = try await fetchTodos()
             
             guard let todos = fetchTodoResponse.data else {
@@ -447,6 +440,35 @@ extension TodosAPI_Async {
         }
         
         return ApiError.unknown(err)
+    }
+}
+
+// MARK: - Async To Combine
+extension TodosAPI_Async {
+    static func fetchTodosAsyncToCombine() -> AnyPublisher<ListResponse, Error> {
+        return Future { (promise: @escaping (Result<ListResponse, Error>) -> Void) in
+            Task {
+                do {
+                    let listResponse = try await fetchTodos()
+                    promise(.success(listResponse))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }.eraseToAnyPublisher()
+    }
+    
+    static func genericFetchTodosAsyncToCombine<T>(asyncTask: @escaping () async throws -> T) -> AnyPublisher<T, Error> {
+        return Future { (promise: @escaping (Result<T, Error>) -> Void) in
+            Task {
+                do {
+                    let listResponse = try await asyncTask()
+                    promise(.success(listResponse))
+                } catch {
+                    promise(.failure(error))
+                }
+            }
+        }.eraseToAnyPublisher()
     }
 }
 

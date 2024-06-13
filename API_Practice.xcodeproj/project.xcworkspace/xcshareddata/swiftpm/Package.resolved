@@ -1,5 +1,5 @@
 {
-  "originHash" : "2ea4a8fe014953208c744baac83150185129d2f2889f05ddfe10ad16590f11b8",
+  "originHash" : "4642ca921977816c0e836ce8d696b71091fa8ad08a70bb550639df6eaa4f4666",
   "pins" : [
     {
       "identity" : "combineext",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "c91979ea956a360bf84f0cc480afbcc7c946c753",
         "version" : "0.1.0"
+      }
+    },
+    {
+      "identity" : "rxcombine",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CombineCommunity/RxCombine.git",
+      "state" : {
+        "revision" : "19474c2ac9fde613bba8513bf98990e1aa9831cd",
+        "version" : "2.0.1"
       }
     },
     {

@@ -8,13 +8,15 @@
 import Foundation
 import Combine
 import CombineExt
+import RxSwift
 
 class TodosVM_Combine: ObservableObject {
     
+    let disposeBag = DisposeBag()
     var subscriptions = Set<AnyCancellable>()
     
     init() {
-        addTodoMultipart()
+        fetchTodosCombineToRx()
     }
     
     private func handleError(_ err: Error) {
@@ -152,5 +154,37 @@ extension TodosVM_Combine {
         case .finished:
             print(#fileID, #function, #line, "-데이터 업로드 성공 ")
         }
+    }
+}
+
+// MARK: - Combine To Async
+extension TodosVM_Combine {
+    private func fetchTodosCombineToAsync() {
+        Task {
+            do {
+                let listData = try await TodosAPI_Combine.fetchTodos().toAsync()
+                print("테스트 listData : \(listData)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+}
+
+// MARK: - Combine To Rx
+extension TodosVM_Combine {
+    private func fetchTodosCombineToRx() {
+        TodosAPI_Combine.fetchTodosResultType()
+            .asObservable()
+            .subscribe(
+                onNext: { data in
+                    print("테스트 data : \(data)")
+                },
+                onError: { [weak self] err in
+                    guard let self = self else { return }
+                    self.handleError(err)
+                }
+            )
+            .disposed(by: disposeBag)
     }
 }

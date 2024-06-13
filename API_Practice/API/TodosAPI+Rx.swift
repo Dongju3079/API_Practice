@@ -269,6 +269,34 @@ extension TodosAPI_Rx {
     
 }
 
+// MARK: - Rx To Async
+extension TodosAPI_Rx {
+    static func fetchTodosWithErrorRxToAsync() async throws -> ListResponse {
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ListResponse, Error>) in
+            
+            var disposable : Disposable? = nil
+            
+            disposable = fetchTodosRxAddErrorTask()
+                .subscribe(
+                    onNext: { data in
+                        continuation.resume(returning: data)
+                    },
+                    onError: { err in
+                        print("onError")
+                        continuation.resume(throwing: err)
+                    },
+                    onCompleted: {
+                        print("onCompleted")
+                        disposable?.dispose()
+                    },
+                    onDisposed: {
+                        print("onDisposed")
+                    }
+                )
+        }
+    }
+}
+
 // MARK: - Hepler
 extension TodosAPI_Rx {
     
@@ -337,5 +365,6 @@ extension TodosAPI_Rx {
         return nil
     }
 }
+
 
 
