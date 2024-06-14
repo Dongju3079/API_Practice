@@ -52,11 +52,12 @@ extension TodosAPI_Async {
     
     static func fetchTodos(page: Int = 1) async throws -> ListResponse {
         
+        
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             // eraseToAnyPublisher : Publisher wrapping
-            let test = ListResponse(data: nil, meta: nil, message: nil)
-            return test
+            throw ApiError.notAllowedUrl
         }
+        
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"

@@ -43,7 +43,7 @@ extension AnyPublisher {
         
         return self.tryCatch({ err -> AnyPublisher<Self.Output, Self.Failure> in
                 
-            guard (when?(err) ?? true) else {
+            guard (when?(err) ?? false) else {
                 throw err
             }
             

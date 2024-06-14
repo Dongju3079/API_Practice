@@ -16,30 +16,17 @@ class TodosVM_Async: ObservableObject {
     var disposeBag = DisposeBag()
     
     init() {
-        Observable.just(1)
-            .mapAsync { value in
-                try await TodosAPI_Async.fetchTodos(page: value)
-            }
-            .subscribe(
-                onNext: { data in
-                    print("테스트 listResponse : \(data)")
-                },
-                onError: { [weak self] err in
-                    self?.handleError(err)
-                }
-            )
-            .disposed(by: disposeBag)
-        
+        fetchTodosRetryExtResult()
     }
     
     private func handleError(_ err: Error) {
         
-        guard let apiError = err as? TodosAPI_Async.ApiError else {
-            print("알 수 없는 에러입니다.")
+        
+        if let apiError = err as? TodosAPI_Async.ApiError {
+            print(apiError.info)
             return
         }
-        
-        print(apiError.info)
+        print(err)
     }
 }
 
@@ -55,6 +42,50 @@ extension TodosVM_Async {
                 self.handleError(error)
             }
             
+        }
+    }
+    
+    private func fetchTodosRetryExtValue() {
+        let retryAsync = Task.retry(retryCount: 3, delay: 3) { err in
+            if case TodosAPI_Async.ApiError.noContent = err {
+                return true
+            } else {
+                return false
+            }
+        } asyncWork: {
+            try await TodosAPI_Async.fetchTodos(page: 1)
+        }
+        
+        // value 방식
+        Task {
+            do {
+                let fetchResult = try await retryAsync.value
+                print("테스트 listResponse : \(fetchResult)")
+            } catch {
+                self.handleError(error)
+            }
+        }
+    }
+    
+    private func fetchTodosRetryExtResult() {
+        let retryAsync = Task.retry(retryCount: 3, delay: 3) { err in
+            if case TodosAPI_Async.ApiError.noContent = err {
+                return true
+            } else {
+                return false
+            }
+        } asyncWork: {
+            try await TodosAPI_Async.fetchTodos(page: 999)
+        }
+        
+        // value 방식
+        Task {
+            switch await retryAsync.result {
+            case .success(let data):
+                print("테스트 data : \(data)")
+            case .failure(let err):
+                self.handleError(err)
+            }
         }
     }
     
@@ -198,4 +229,22 @@ extension TodosVM_Async {
 }
 
 
+// MARK: - Async To Rx {
+extension TodosVM_Async {
+    private func fetchTodosAsyncToRx() {
+        Observable.just(1)
+            .mapAsync { value in
+                try await TodosAPI_Async.fetchTodos(page: value)
+            }
+            .subscribe(
+                onNext: { data in
+                    print("테스트 listResponse : \(data)")
+                },
+                onError: { [weak self] err in
+                    self?.handleError(err)
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+}
 

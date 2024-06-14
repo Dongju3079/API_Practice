@@ -44,6 +44,7 @@
 		528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96492C1A98A100DF249D /* ObservableType+Ext.swift */; };
 		52FDF0B22C1AB81D00A7C3E1 /* RxCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 52FDF0B12C1AB81D00A7C3E1 /* RxCombine */; };
 		52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */; };
+		52FDF0B62C1C95B600A7C3E1 /* Task+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +80,7 @@
 		528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyPublisher+Ext.swift"; sourceTree = "<group>"; };
 		528B96492C1A98A100DF249D /* ObservableType+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ObservableType+Ext.swift"; sourceTree = "<group>"; };
 		52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Ext.swift"; sourceTree = "<group>"; };
+		52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -209,6 +211,7 @@
 				528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */,
 				52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */,
 				528B96492C1A98A100DF249D /* ObservableType+Ext.swift */,
+				52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */,
 			);
 			path = Ext;
 			sourceTree = "<group>";
@@ -314,6 +317,7 @@
 				525B808B2C084DF90083C79D /* StoryBoarded.swift in Sources */,
 				525B80972C0862500083C79D /* UISearchBarWrapper.swift in Sources */,
 				525B80752C074D790083C79D /* ContentView.swift in Sources */,
+				52FDF0B62C1C95B600A7C3E1 /* Task+Ext.swift in Sources */,
 				525B809F2C08DF940083C79D /* TodosAPI.swift in Sources */,
 				525B80842C074FAE0083C79D /* MainVC.swift in Sources */,
 				525B808F2C084F210083C79D /* Identifier.swift in Sources */,

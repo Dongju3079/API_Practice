@@ -10,7 +10,7 @@ import SwiftUI
 
 struct TodosView: View {
     
-    @State var todoResponse = TodosVM_Combine()
+    @State var todoResponse = TodosVM_Async()
     
     var body: some View {
         
