@@ -18,7 +18,52 @@ class TodosVM_Rx: ObservableObject {
     var subscriptions = Set<AnyCancellable>()
     
     init() {
-        fetchTodoRxToCombine()
+        
+        TodosAPI_Rx.fetchTodosRxAddErrorTask()
+            .retry(when: { (observableErr: Observable<any Error>) in
+                observableErr
+                                .do(onNext: { err in
+                                    print("observableErr : \(err)")
+                                })
+                                .flatMap { err in
+
+                                    if case TodosAPI_Rx.ApiError.noContent = err {
+                                        throw err
+                                    }
+                                    
+                                    return Observable<Void>
+                                        .just(())
+                                        .delay(.seconds(3), scheduler: MainScheduler.instance)
+                                }
+                                .take(3) // : 횟수 제한
+            })
+            .subscribe(onNext: {
+                print("onNext:\($0)")
+            }, onError: {
+                print("onError:\($0)")
+            }, onCompleted: {
+                print("onCompleted")
+            }, onDisposed: {
+                print("onDisposed")
+            })
+            .disposed(by: disposeBag)
+        
+//        
+//        TodosAPI_Rx.fetchTodosRxAddErrorTask()
+//            .retryWithDelayAndCondition(retryCount: 3, delay: 2, when: { err in
+//                print("테스트 err : \(err)")
+//                return true
+//            })
+//            .subscribe(onNext: {
+//                print("onNext:\($0)")
+//            }, onError: {
+//                print("onError:\($0)")
+//            }, onCompleted: {
+//                print("onCompleted")
+//            }, onDisposed: {
+//                print("onDisposed")
+//            })
+//            .disposed(by: disposeBag)
     }
     
     private func handleError(_ err: Error) {

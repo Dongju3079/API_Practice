@@ -20,6 +20,8 @@ extension TodosAPI_Rx {
     
     static func fetchTodosRxAddErrorTask(page: Int = 1) -> Observable<ListResponse> {
         
+        return .error(ApiError.notAllowedUrl)
+        
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             return .error(ApiError.notAllowedUrl)
         }
@@ -30,9 +32,10 @@ extension TodosAPI_Rx {
         
         return URLSession.shared.rx
             .response(request: request)
-            .map { (response: HTTPURLResponse, data: Data) -> ListResponse in
-                return try JSONDecoder().decode(ListResponse.self, from: data)
+            .map { (response: HTTPURLResponse, data: Data) -> Data in
+                return data//try JSONDecoder().decode(ListResponse.self, from: data)
             }
+            .decode(type: ListResponse.self, decoder: JSONDecoder())
             .map({ response in
                 guard let todos = response.data,
                       !todos.isEmpty else {
@@ -207,12 +210,23 @@ extension TodosAPI_Rx {
         return URLSession.shared.rx
             .response(request: urlRequest)
             .map { (response: HTTPURLResponse, data: Data) in
-                do {
-                    let listData = try JSONDecoder().decode(TodoResponse.self, from: data)
-                    return listData
-                } catch {
-                    throw ApiError.decodingError
+                if let err = checkResponse(response) {
+                    throw err
                 }
+                
+                return data
+            }
+            .decode(type: TodoResponse.self, decoder: JSONDecoder())
+            .catch { err in
+                if let apiError = err as? ApiError {
+                    throw apiError
+                }
+                
+                if let decodingError = err as? DecodingError {
+                    throw decodingError
+                }
+                
+                throw err
             }
     }
     
@@ -308,12 +322,25 @@ extension TodosAPI_Rx {
     private static func getBaseResponse<T: Decodable>(_ request: URLRequest, _ type: T.Type) -> Observable<Result<T, ApiError>> {
         return URLSession.shared.rx
             .response(request: request)
-            .map { (response: HTTPURLResponse, data: Data) in
+            .map { (response: HTTPURLResponse, data: Data) -> Data in//-> Result<T, ApiError> in
                 if let err = checkResponse(response) {
-                    return .failure(err)
+                    throw err// return .failure(err)
                 }
                 
-                return self.parseJsonBase(data, type)
+                return data // self.parseJsonBase(data, type)
+            }
+            .decode(type: type, decoder: JSONDecoder())
+            .map { .success($0) }
+            .catch { err -> Observable<Result<T, ApiError>> in
+                if let err = err as? DecodingError {
+                    return .just(.failure(.decodingError))
+                }
+                
+                if let error = err as? ApiError {
+                    return .just(.failure(error))
+                }
+                
+                return .just(.failure(.unknown(err)))
             }
     }
     
@@ -365,6 +392,5 @@ extension TodosAPI_Rx {
         return nil
     }
 }
-
 
 

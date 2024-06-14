@@ -8,13 +8,27 @@
 import Foundation
 import Combine
 import CombineExt
+import RxSwift
 
 class TodosVM_Async: ObservableObject {
     
     var subscriptions = Set<AnyCancellable>()
+    var disposeBag = DisposeBag()
     
     init() {
-       
+        Observable.just(1)
+            .mapAsync { value in
+                try await TodosAPI_Async.fetchTodos(page: value)
+            }
+            .subscribe(
+                onNext: { data in
+                    print("테스트 listResponse : \(data)")
+                },
+                onError: { [weak self] err in
+                    self?.handleError(err)
+                }
+            )
+            .disposed(by: disposeBag)
         
     }
     
@@ -132,6 +146,7 @@ extension TodosVM_Async {
     }
 }
 
+
 extension TodosVM_Async {
     private func handleCompletion(_ completion: Subscribers.Completion<TodosAPI_Combine.ApiError>) {
         switch completion {
@@ -166,9 +181,7 @@ extension TodosVM_Async {
     
     private func fetchTodoAsyncToCombine(page: Int) {
         Just(page)
-            .mapAsync { value in
-                try await TodosAPI_Async.fetchTodos(page: value)
-            }
+            .mapAsync(asyncTask: TodosAPI_Async.fetchTodos(page:))
         .sink { [weak self] completion in
             guard let self = self else { return }
             switch completion {
@@ -183,5 +196,6 @@ extension TodosVM_Async {
         .store(in: &subscriptions)
     }
 }
+
 
 

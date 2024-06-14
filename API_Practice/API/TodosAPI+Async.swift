@@ -8,7 +8,7 @@
 import Foundation
 import MultipartForm
 import Combine
-
+import RxSwift
 
 
 extension TodosAPI_Async {
@@ -53,6 +53,23 @@ extension TodosAPI_Async {
     static func fetchTodos(page: Int = 1) async throws -> ListResponse {
         
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
+            // eraseToAnyPublisher : Publisher wrapping
+            let test = ListResponse(data: nil, meta: nil, message: nil)
+            return test
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "accept")
+ 
+        let listResponse = try await executeRequest(request, ListResponse.self)
+        
+        return listResponse
+    }
+    
+    static func fetchTodosNoParameter() async throws -> ListResponse {
+        
+        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"1"]) else {
             // eraseToAnyPublisher : Publisher wrapping
             let test = ListResponse(data: nil, meta: nil, message: nil)
             return test
@@ -471,6 +488,43 @@ extension TodosAPI_Async {
         }.eraseToAnyPublisher()
     }
 }
+
+// MARK: - Async To Rx
+extension TodosAPI_Async {
+    static func fetchTodosAsyncToRx() -> Observable<ListResponse> {
+        
+        return Observable.create { (emitter:AnyObserver<ListResponse>) in
+            Task {
+                do {
+                    let listResponse = try await fetchTodos()
+                    emitter.onNext(listResponse)
+                    emitter.onCompleted()
+                } catch {
+                    emitter.onError(error)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+    
+    static func genericFetchTodosAsyncToRx<T>(asyncTask: @escaping () async throws -> T) -> Observable<T> {
+        
+        return Observable.create { (emitter:AnyObserver<T>) in
+            Task {
+                do {
+                    let listResponse = try await asyncTask()
+                    emitter.onNext(listResponse)
+                    emitter.onCompleted()
+                } catch {
+                    emitter.onError(error)
+                }
+            }
+            return Disposables.create()
+        }
+    }
+}
+
+
 
 
 
