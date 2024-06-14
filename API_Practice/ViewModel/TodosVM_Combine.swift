@@ -16,7 +16,7 @@ class TodosVM_Combine: ObservableObject {
     var subscriptions = Set<AnyCancellable>()
     
     init() {
-        fetchTodosCombineToRx()
+        fetchTodosRetryExt()
     }
     
     private func handleError(_ err: Error) {
@@ -35,11 +35,48 @@ class TodosVM_Combine: ObservableObject {
 extension TodosVM_Combine {
     
     private func fetchTodos() {
-        TodosAPI_Combine.fetchTodos()
+        TodosAPI_Combine.fetchTodos(page: 555)
+            .tryCatch({ err in
+                
+                if case TodosAPI_Combine.ApiError.noContent = err {
+                    throw err
+                }
+                
+                return Just(Void(()))
+                    .delay(for: 3, scheduler: DispatchQueue.main)
+                    .flatMap { _ in
+                        return TodosAPI_Combine.fetchTodos(page: 555)
+                    }
+                    .retry(3)
+            })
             .sink { [weak self] completion in
                 guard let self = self else { return }
                 switch completion {
                 case .failure(let err):
+                    print("combine retry-error")
+                    self.handleError(err)
+                case .finished:
+                    print(#fileID, #function, #line, "-Test : finished ")
+                }
+            } receiveValue: { todoListResponse in
+                print(#fileID, #function, #line, "-todoList: \(todoListResponse) ")
+            }.store(in: &subscriptions)
+    }
+    
+    private func fetchTodosRetryExt() {
+        TodosAPI_Combine.fetchTodos(page: 555)
+            .retryWithDelayAndConditionAnyPublisher(retryCount: 0, delay: 3) { err in
+                if case TodosAPI_Combine.ApiError.noContent = err {
+                    return true
+                } else {
+                    return false
+                }
+            }
+            .sink { [weak self] completion in
+                guard let self = self else { return }
+                switch completion {
+                case .failure(let err):
+                    print("combine retry-error")
                     self.handleError(err)
                 case .finished:
                     print(#fileID, #function, #line, "-Test : finished ")

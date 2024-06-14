@@ -81,6 +81,7 @@ extension TodosAPI_Combine {
             .decode(type: ListResponse.self, decoder: JSONDecoder())
             .tryMap(checkResponseType(decoded: ))
             .mapError(checkError(err:))
+            .print("TodosAPI_Combine.fetchTodos(page: 555)")
             .eraseToAnyPublisher()
     }
     
@@ -248,8 +249,8 @@ extension TodosAPI_Combine {
     // SwitchToLatest
     // 스트림을 통해서 보내지는 값 중 마지막 값만 받고 싶을 때
     // switchToLatest : 가장 최근에 수신한 퍼블리셔를 받음
-    // 헷갈린 점 : 단순 map을 통해서 내려갔으면 BaseResponse가 아닌가?
-    // switchToLatest를 통해서 가장 최근에 수신한 퍼블리셔 BaseListResponse를 내려보냄
+    // 헷갈린 점 : 단순 map을 통해서 내려갔으면 TodoResponse가 아닌가?
+    // switchToLatest를 통해서 가장 최근에 수신한 퍼블리셔 ListResponse를 내려보냄
     static func addTodoAndFetchTodosNoErrorSwitchToLatest(content: String, isDone: Bool = false) -> AnyPublisher<[Todo], Never> {
         
         return self.addTodoByJson(content: content, isDone: isDone)
