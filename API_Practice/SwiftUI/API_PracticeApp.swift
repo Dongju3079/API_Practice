@@ -10,20 +10,24 @@ import SwiftUI
 @main
 struct API_PracticeApp: App {
     
+    @State var selectedTab: Int = 1
+    
     var body: some Scene {
         WindowGroup {
-            TabView {
+            TabView(selection: $selectedTab) {
                 TodosView()
                     .tabItem {
                         Image(systemName: "1.square.fill")
                         Text("SwiftUI")
                     }
+                    .tag(0)
                 MainVC.instantiate()
                     .getRepresentable()
                     .tabItem {
                         Image(systemName: "2.square.fill")
                         Text("UIKit")
                     }
+                    .tag(1)
             }
             
         }

@@ -16,7 +16,7 @@ class TodosVM_Async: ObservableObject {
     var disposeBag = DisposeBag()
     
     init() {
-        fetchTodosRetryExtResult()
+//        fetchTodosRetryExtResult()
     }
     
     private func handleError(_ err: Error) {
@@ -68,6 +68,7 @@ extension TodosVM_Async {
     }
     
     private func fetchTodosRetryExtResult() {
+        
         let retryAsync = Task.retry(retryCount: 3, delay: 3) { err in
             if case TodosAPI_Async.ApiError.noContent = err {
                 return true

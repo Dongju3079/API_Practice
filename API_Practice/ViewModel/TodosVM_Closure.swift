@@ -11,10 +11,36 @@ import Combine
 
 class TodosVM_Closure: ObservableObject {
     
-    let disposeBag = DisposeBag()
+    var todos: [Todo] = [] {
+        didSet {
+            print(#fileID, #function, #line, "-TodosChanged ")
+            self.notifyTodosChanged?(todos)
+        }
+    }
     
+    var currentPage: Int = 1 {
+        didSet {
+            print(#fileID, #function, #line, "-\(currentPage) ")
+            self.notifyCurrentPage?(currentPage)
+        }
+    }
+    
+    var isLoading: Bool = false {
+        didSet {
+            print(#fileID, #function, #line, "-isLoading: \(isLoading) ")
+            self.notifyIsLoading?(isLoading)
+        }
+    }
+    
+    var notifyTodosChanged: (([Todo]) -> Void)? = nil
+    var notifyCurrentPage : ((Int) -> Void)? = nil
+    var notifyIsLoading : ((Bool) -> Void)? = nil
+    
+    let disposeBag = DisposeBag()
+    var subscriptions = Set<AnyCancellable>()
+
     init() {
-        self.addTodoAndFetchListClosureToRx()
+        self.fetchTodos()
     }
     
     private func handleError(_ err: Error) {
@@ -31,17 +57,45 @@ class TodosVM_Closure: ObservableObject {
 
 // MARK: - fetch Data
 extension TodosVM_Closure {
-    private func fetchTodos() {
-        TodosAPI_Closure.fetchTodosClosure { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let todoList):
-                print("테스트 success : \(todoList)")
-
-            case .failure(let failure):
-                self.handleError(failure)
+    
+    private func fetchTodos(page: Int = 1) {
+        
+        if isLoading {
+            return
+        } else {
+            isLoading = true
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            TodosAPI_Closure.fetchTodosClosure(page: page) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let listResponse):
+                    
+                    
+                    guard let todos = listResponse.data else {
+                        return
+                    }
+                    
+                    if page == 1 {
+                        self.todos = todos
+                    } else {
+                        self.todos.append(contentsOf: todos)
+                    }
+                    
+                    self.currentPage = page
+                    
+                case .failure(let failure):
+                    self.handleError(failure)
+                }
+                
+                self.isLoading = false
             }
         }
+    }
+    
+    func fetchMore() {
+        self.fetchTodos(page: currentPage + 1)
     }
     
     private func searchTodos() {
@@ -178,6 +232,21 @@ extension TodosVM_Closure {
                 self.handleError(err)
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func addTodoAndFetchListClosureToCombine() {
+        TodosAPI_Closure.fetchTodosClosureToCombineWithError()
+            .sink { [weak self] completion in
+                switch completion {
+                case .failure(let err):
+                    self?.handleError(err)
+                case .finished:
+                    print("테스트 finished")
+                }
+            } receiveValue: { data in
+                print("테스트 data : \(data)")
+            }
+            .store(in: &subscriptions)
     }
     
 }

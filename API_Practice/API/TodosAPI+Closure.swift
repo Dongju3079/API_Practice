@@ -19,7 +19,7 @@ extension TodosAPI_Closure {
     typealias ResultTodos = Result<[Todo], ApiError>
     
     static func fetchTodosClosure(page: Int = 1, completion: @escaping (ResultListData) -> Void) {
-        
+        print("테스트 fetch Url")
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             return completion(.failure(.unknown(nil)))
         }
@@ -580,16 +580,7 @@ extension TodosAPI_Closure {
         return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
             fetchTodosClosure { result in
                 
-                // 1번
                 promise(result)
-                
-                // 2번
-//                switch result {
-//                case .success(let listData):
-//                    promise(.success(listData))
-//                case .failure(let err):
-//                    promise(.failure(err))
-//                }
             }
         }.eraseToAnyPublisher()
     }
