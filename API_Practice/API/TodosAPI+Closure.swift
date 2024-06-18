@@ -29,7 +29,7 @@ extension TodosAPI_Closure {
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
         URLSession.shared.dataTask(with: request) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -68,7 +68,7 @@ extension TodosAPI_Closure {
         urlRequest.httpBody = form.bodyData
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(data: data, err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -109,7 +109,7 @@ extension TodosAPI_Closure {
         }
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(data: data, err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -131,7 +131,7 @@ extension TodosAPI_Closure {
         
         let queryItems = ["query": searchTerm, "page": "\(page)"]
         
-        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: queryItems) else {
+        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos/search", queryItems: queryItems) else {
             completion(.failure(.unknown(nil)))
             return
         }
@@ -142,7 +142,7 @@ extension TodosAPI_Closure {
         
         
         URLSession.shared.dataTask(with: request) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -171,7 +171,7 @@ extension TodosAPI_Closure {
         
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -205,7 +205,7 @@ extension TodosAPI_Closure {
         urlRequest.percentEncodeParameters(parameters: requestParams)
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -245,7 +245,7 @@ extension TodosAPI_Closure {
         }
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -275,7 +275,7 @@ extension TodosAPI_Closure {
         urlRequest.addValue("application/json", forHTTPHeaderField: "accept")
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err, response) {
+            if let err = checkResponse(err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -293,7 +293,7 @@ extension TodosAPI_Closure {
     }
     
     // MARK: - API 연쇄 호출
-    static func addATodoAndFetchTodos(title: String,
+    static func addTodoAndFetchTodos(title: String,
                                       isDone: Bool = false,
                                       completion: @escaping (Result<ListResponse, ApiError>) -> Void){
         self.addTodoClosureByJson(content: title, isDone: isDone) { result in
@@ -303,12 +303,12 @@ extension TodosAPI_Closure {
                     switch result {
                     case .success(let listResponse):
                         return completion(.success(listResponse))
-                    case .failure(_):
-                        print("목록 불러오기 실패")
+                    case .failure(let err):
+                        return completion(.failure(err))
                     }
                 }
-            case .failure(_):
-                print("할 일 추가 실패")
+            case .failure(let err):
+                return completion(.failure(err))
             }
         }
     }
@@ -421,7 +421,7 @@ extension TodosAPI_Closure {
     
     static func addTodoAndFetchListClosureToAsync(content: String, isDone: Bool = false) async throws -> ListResponse {
         return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<ListResponse, Error>) in
-            self.addATodoAndFetchTodos(title: content) { result in
+            self.addTodoAndFetchTodos(title: content) { result in
                 switch result {
                 case .success(let success):
                     continuation.resume(returning: success)
@@ -536,7 +536,7 @@ extension TodosAPI_Closure {
     
     static func addTodoAndFetchListClosureToRx(content: String, isDone: Bool = false) -> Observable<[Todo]> {
         return Observable.create { (emitter: AnyObserver<ListResponse>) in
-            self.addATodoAndFetchTodos(title: content) { result in
+            self.addTodoAndFetchTodos(title: content) { result in
                 switch result {
                 case .success(let listData):
                     emitter.onNext(listData)
@@ -548,7 +548,7 @@ extension TodosAPI_Closure {
             return Disposables.create()
         }
         .compactMap {
-            guard let todos = $0.data else {
+            guard let _ = $0.data else {
                 throw ApiError.noContent
             }
             return $0.data
@@ -593,7 +593,7 @@ extension TodosAPI_Closure {
             }
         }
         .tryMap({ listResponse in
-            guard let todos = listResponse.data else {
+            guard let _ = listResponse.data else {
                 throw ApiError.noContent
             }
             
@@ -698,7 +698,7 @@ extension TodosAPI_Closure {
     
     static func addTodoAndFetchListClosureToCombine(content: String, isDone: Bool = false)  -> AnyPublisher<[Todo], Error> {
         return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
-            addATodoAndFetchTodos(title: content) { result in
+            addTodoAndFetchTodos(title: content) { result in
                 promise(result)
             }
         }
@@ -721,7 +721,7 @@ extension TodosAPI_Closure {
     
     static func addTodoAndFetchListClosureToCombineNoError(content: String, isDone: Bool = false)  -> AnyPublisher<[Todo], Never> {
         return Future { (promise: @escaping (Result<ListResponse, ApiError>) -> Void) in
-            addATodoAndFetchTodos(title: content) { result in
+            addTodoAndFetchTodos(title: content) { result in
                 promise(result)
             }
         }
@@ -756,7 +756,7 @@ extension TodosAPI_Closure {
 
 // MARK: - Hepler
 extension TodosAPI_Closure {
-    private static func checkResponse(_ err: Error?, _ response: URLResponse?) -> ApiError? {
+    private static func checkResponse(data: Data? = nil, err: Error?, response: URLResponse?) -> ApiError? {
         if let err = err {
             return .unknown(err)
         }
@@ -768,7 +768,15 @@ extension TodosAPI_Closure {
         switch httpResponse.statusCode {
         case 401:
             return .unauthorized
-      
+        case 422:
+            guard let data = data,
+                  let responseError = try? JSONDecoder().decode(ErrorResponse.self, from: data) else {
+                
+                return ApiError.decodingError
+            }
+            
+            print("테스트 apiError : \(responseError.message)")
+            return ApiError.errResponseFromServer(responseError)
         case 204:
             return .noContent
             

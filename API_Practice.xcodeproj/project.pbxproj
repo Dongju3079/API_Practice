@@ -42,6 +42,7 @@
 		525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C22C11DE860083C79D /* TodosVM_Combine.swift */; };
 		528B96482C19D06800DF249D /* AnyPublisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */; };
 		528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96492C1A98A100DF249D /* ObservableType+Ext.swift */; };
+		529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529C82452C210DA700B076A6 /* ViewController+Ext.swift */; };
 		52FDF0B22C1AB81D00A7C3E1 /* RxCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 52FDF0B12C1AB81D00A7C3E1 /* RxCombine */; };
 		52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */; };
 		52FDF0B62C1C95B600A7C3E1 /* Task+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */; };
@@ -79,6 +80,7 @@
 		525B80C22C11DE860083C79D /* TodosVM_Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Combine.swift; sourceTree = "<group>"; };
 		528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyPublisher+Ext.swift"; sourceTree = "<group>"; };
 		528B96492C1A98A100DF249D /* ObservableType+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ObservableType+Ext.swift"; sourceTree = "<group>"; };
+		529C82452C210DA700B076A6 /* ViewController+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+Ext.swift"; sourceTree = "<group>"; };
 		52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Publisher+Ext.swift"; sourceTree = "<group>"; };
 		52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Task+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -212,6 +214,7 @@
 				52FDF0B32C1ADB4C00A7C3E1 /* Publisher+Ext.swift */,
 				528B96492C1A98A100DF249D /* ObservableType+Ext.swift */,
 				52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */,
+				529C82452C210DA700B076A6 /* ViewController+Ext.swift */,
 			);
 			path = Ext;
 			sourceTree = "<group>";
@@ -331,6 +334,7 @@
 				525B809D2C08DEAD0083C79D /* TodoResponse.swift in Sources */,
 				52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */,
 				525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */,
+				529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */,
 				525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */,
 				525B80BB2C0F4C850083C79D /* UrlRequest+Ext.swift in Sources */,
 				525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */,

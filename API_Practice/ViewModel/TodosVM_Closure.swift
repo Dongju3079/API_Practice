@@ -11,6 +11,7 @@ import Combine
 
 class TodosVM_Closure: ObservableObject {
     
+    // MARK: - Variables
     var todos: [Todo] = [] {
         didSet {
             print(#fileID, #function, #line, "-TodosChanged ")
@@ -18,10 +19,21 @@ class TodosVM_Closure: ObservableObject {
         }
     }
     
-    var currentPage: Int = 1 {
+    var currentPageMeta: Meta? = nil {
         didSet {
-            print(#fileID, #function, #line, "-\(currentPage) ")
+            self.notifyHasNext?(currentPageMeta?.hasNext() ?? true)
             self.notifyCurrentPage?(currentPage)
+        }
+    }
+    
+    var currentPage: Int {
+        get {
+            if let pageInfo = self.currentPageMeta,
+               let currentPage = pageInfo.currentPage {
+                return currentPage
+            } else {
+                return 1
+            }
         }
     }
     
@@ -32,13 +44,29 @@ class TodosVM_Closure: ObservableObject {
         }
     }
     
+    var searchTerm: String = "" {
+        didSet {
+            if searchTerm.count > 1 {
+                self.searchTodos(searchTerm: searchTerm)
+            } else {
+                self.fetchTodos(page: 1)
+            }
+        }
+    }
+    
+    var notifyUploadCompleted : (() -> Void)? = nil
     var notifyTodosChanged: (([Todo]) -> Void)? = nil
+    var notifyNoContent : ((Bool) -> Void)? = nil
     var notifyCurrentPage : ((Int) -> Void)? = nil
     var notifyIsLoading : ((Bool) -> Void)? = nil
+    var notifyRefresh : (() -> Void)? = nil
+    var notifyHasNext : ((Bool) -> Void)? = nil
+    var notifyErrResponse : ((String) -> Void)? = nil
     
     let disposeBag = DisposeBag()
     var subscriptions = Set<AnyCancellable>()
-
+    
+    // MARK: - Initializer
     init() {
         self.fetchTodos()
     }
@@ -50,7 +78,16 @@ class TodosVM_Closure: ObservableObject {
             return
         }
         
-        print(apiError.info)
+        switch apiError {
+        case .noContent:
+            self.notifyNoContent?(true)
+        case .errResponseFromServer(let errResponse):
+            guard let message = errResponse?.message else { return }
+            self.notifyErrResponse?(message)
+        default :
+            print(apiError.info)
+        }
+        
     }
     
 }
@@ -58,22 +95,47 @@ class TodosVM_Closure: ObservableObject {
 // MARK: - fetch Data
 extension TodosVM_Closure {
     
-    func fetchTodos(page: Int = 1) {
+    func fetchRefresh() {
+        guard !isLoading else { return }
+
+        self.fetchTodos(page: 1)
+    }
+    
+    func fetchMore() {
         
-        if isLoading {
-            return
-        } else {
-            isLoading = true
+        guard let pageInfo = self.currentPageMeta,
+              pageInfo.hasNext(),
+              !isLoading else {
+            return print("다음페이지에 대한 정보가 없습니다.")
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        if searchTerm.count > 0 {
+            // 검색어가 있을 때
+            self.searchTodos(searchTerm: searchTerm, page: currentPage + 1)
+        } else {
+            // 검색어가 없을 때
+            self.fetchTodos(page: currentPage + 1)
+        }
+    }
+    
+    func fetchTodos(page: Int = 1) {
+        
+        self.notifyNoContent?(false)
+        self.notifyHasNext?(true)
+        isLoading = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             TodosAPI_Closure.fetchTodosClosure(page: page) { [weak self] result in
+                
                 guard let self = self else { return }
+                
+                self.isLoading = false
+                
                 switch result {
                 case .success(let listResponse):
                     
-                    
-                    guard let todos = listResponse.data else {
+                    guard let todos = listResponse.data,
+                          let pageInfo = listResponse.meta else {
                         return
                     }
                     
@@ -83,28 +145,70 @@ extension TodosVM_Closure {
                         self.todos.append(contentsOf: todos)
                     }
                     
-                    self.currentPage = page
+                    self.currentPageMeta = pageInfo
                     
                 case .failure(let failure):
                     self.handleError(failure)
                 }
                 
-                self.isLoading = false
+                
+                notifyRefresh?()
             }
         }
     }
     
-    func fetchMore() {
-        self.fetchTodos(page: currentPage + 1)
+    
+    
+    func searchTodos(searchTerm: String = "빡코딩", page: Int = 1) {
+        
+        self.notifyNoContent?(false)
+        self.notifyHasNext?(true)
+        isLoading = true
+        
+        if page == 1 {
+            self.todos = []
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            TodosAPI_Closure.searchTodosClosure(searchTerm: searchTerm,
+                                                page: page) { [weak self] result in
+                guard let self = self else { return }
+                self.isLoading = false
+                switch result {
+                case .success(let listResponse):
+                    guard let todos = listResponse.data,
+                          let pageInfo = listResponse.meta else { return }
+                    print("테스트 todos list : \(todos)")
+                    
+                    if page == 1 {
+                        self.todos = todos
+                    } else {
+                        self.todos.append(contentsOf: todos)
+                    }
+                    
+                    self.currentPageMeta = pageInfo
+                    
+                case .failure(let failure):
+                    
+                    self.handleError(failure)
+                }
+            }
+        }
     }
     
-    private func searchTodos() {
-        TodosAPI_Closure.searchTodosClosure(searchTerm: "빡코딩") { [weak self] result in
+    func addTodoFetchTodo(content: String) {
+        print("테스트 addTodoFetchTodo : \(content)")
+        TodosAPI_Closure.addTodoAndFetchTodos(title: content) { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .success(let todoList):
-                print("테스트 success : \(todoList)")
-
+            case .success(let listResponse):
+                guard let todos = listResponse.data,
+                      let pageInfo = listResponse.meta else { return }
+                
+                self.todos = todos
+                
+                self.currentPageMeta = pageInfo
+                self.notifyUploadCompleted?()
             case .failure(let failure):
                 self.handleError(failure)
             }
@@ -124,9 +228,9 @@ extension TodosVM_Closure {
         }
     }
     
-    private func addTodoJson() {
-        TodosAPI_Closure.addTodoClosureByJson(content: "Json 테스트합니다.",
-                                      isDone: true) { result in
+    private func addTodoJson(content: String) {
+        TodosAPI_Closure.addTodoClosureByJson(content: content,
+                                      isDone: false) { result in
             switch result {
             case .success(let todoList):
                 print("테스트 success : \(todoList)")
@@ -149,13 +253,25 @@ extension TodosVM_Closure {
         }
     }
     
-    private func editTodoEncoded() {
-        TodosAPI_Closure.editTodoClosureEncoded(id: 5168,
-                                 content: "5168 Edit",
-                                 isDone: true) { result in
+    func editTodoEncoded(editTodo: Todo, content: String) {
+        let index = self.todos.firstIndex { todo in
+            return todo.id == editTodo.id
+        }
+        
+        guard let todoId = editTodo.id,
+              let isDone = editTodo.isDone,
+              let index = index else { return }
+        
+        TodosAPI_Closure.editTodoClosureEncoded(id: todoId,
+                                 content: content,
+                                 isDone: isDone) { [weak self] result in
+            guard let self = self else { return }
+            
             switch result {
-            case .success(let todo):
-                print("테스트 todo : \(todo)")
+            case .success(let todoResponse):
+                guard let todo = todoResponse.data else { return }
+                self.todos[index] = todo
+                
             case .failure(let err):
                 self.handleError(err)
 
@@ -163,12 +279,47 @@ extension TodosVM_Closure {
         }
     }
     
-    private func deleteTodo() {
-        TodosAPI_Closure.deleteTodoClosure(id: 5167) { result in
+    func editTodoCompleted(editTodo: Todo, isDone: Bool) {
+        let index = self.todos.firstIndex { todo in
+            return todo.id == editTodo.id
+        }
+        
+        guard let todoId = editTodo.id,
+              let content = editTodo.title,
+              let index = index else { return }
+        
+        TodosAPI_Closure.editTodoClosureEncoded(id: todoId,
+                                 content: content,
+                                 isDone: isDone) { [weak self] result in
+            guard let self = self else { return }
+            
             switch result {
-            case .success(let todo):
-                print("테스트 삭제된 toto : \(todo)")
+            case .success(let todoResponse):
+                guard let todo = todoResponse.data else { return }
+                self.todos[index] = todo
+                
+            case .failure(let err):
+                self.handleError(err)
 
+            }
+        }
+    }
+    
+    func deleteTodoEncoded(editTodo: Todo) {
+        let index = self.todos.firstIndex { todo in
+            return todo.id == editTodo.id
+        }
+        
+        guard let todoId = editTodo.id,
+              let index = index else { return }
+        
+        TodosAPI_Closure.deleteTodoClosure(id: todoId) { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+            case .success(_):
+                self.todos.remove(at: index)
+                
             case .failure(let err):
                 self.handleError(err)
             }

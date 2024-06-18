@@ -49,4 +49,13 @@ struct Meta: Codable {
         case perPage = "per_page"
         case to, total
     }
+    
+    func hasNext() -> Bool {
+        guard let current = currentPage,
+              let last = lastPage else {
+            return true
+        }
+        
+        return last > current
+    }
 }

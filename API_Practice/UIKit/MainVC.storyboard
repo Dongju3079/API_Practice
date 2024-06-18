@@ -48,6 +48,9 @@
                                                 <buttonConfiguration key="configuration" style="filled" title="할 일 추가">
                                                     <fontDescription key="titleFontDescription" type="boldSystem" pointSize="12"/>
                                                 </buttonConfiguration>
+                                                <connections>
+                                                    <action selector="tappedNewTodoBtn:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="ioI-fp-B3b"/>
+                                                </connections>
                                             </button>
                                         </subviews>
                                     </stackView>
@@ -66,6 +69,12 @@
                                 <rect key="frame" x="0.0" y="249" width="393" height="569"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="검색된 결과가 없습니다." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="THH-nK-Q7U">
+                                <rect key="frame" x="102.66666666666669" y="521.66666666666663" width="188" height="24"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="20"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -74,13 +83,16 @@
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="DPb-el-hmj"/>
                             <constraint firstItem="Sbj-Vq-eTC" firstAttribute="top" secondItem="T7x-ke-kXt" secondAttribute="bottom" id="JEu-5g-u5e"/>
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="centerX" secondItem="vDu-zF-Fre" secondAttribute="centerX" id="Ori-Sx-vo7"/>
+                            <constraint firstItem="THH-nK-Q7U" firstAttribute="centerX" secondItem="Sbj-Vq-eTC" secondAttribute="centerX" id="XXq-7j-daF"/>
                             <constraint firstItem="Sbj-Vq-eTC" firstAttribute="trailing" secondItem="T7x-ke-kXt" secondAttribute="trailing" id="iNW-p0-7yr"/>
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="k9f-eO-j7m"/>
+                            <constraint firstItem="THH-nK-Q7U" firstAttribute="centerY" secondItem="Sbj-Vq-eTC" secondAttribute="centerY" id="kKH-eX-jrM"/>
                             <constraint firstItem="Sbj-Vq-eTC" firstAttribute="leading" secondItem="T7x-ke-kXt" secondAttribute="leading" id="mjl-le-Gdr"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="myTableView" destination="Sbj-Vq-eTC" id="6IW-ff-Pd8"/>
+                        <outlet property="noContentLabel" destination="THH-nK-Q7U" id="8gR-rI-hJa"/>
                         <outlet property="pageInfoLabel" destination="taY-SS-Bpx" id="idf-Aq-I9X"/>
                         <outlet property="searchBar" destination="u6S-O5-ewm" id="dHi-Bs-lS2"/>
                     </connections>

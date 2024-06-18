@@ -3,7 +3,7 @@
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22685"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -56,6 +56,9 @@
                     </stackView>
                     <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2us-to-0yY">
                         <rect key="frame" x="403" y="48.333333333333336" width="51" height="31.000000000000007"/>
+                        <connections>
+                            <action selector="onSwitchClicked:" destination="0Px-bk-X6P" eventType="valueChanged" id="C4C-ib-Vm9"/>
+                        </connections>
                     </switch>
                 </subviews>
                 <constraints>
