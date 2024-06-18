@@ -12,7 +12,16 @@ class MainVC: UIViewController {
     
     @IBOutlet weak var myTableView: UITableView!
     @IBOutlet weak var pageInfoLabel: UILabel!
-    @IBOutlet weak var loadIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var searchBar: UISearchBar!
+    
+    
+    lazy var indicatorView: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView()
+        view.color = .systemBlue
+        view.startAnimating()
+        view.frame = CGRect(x: 0, y: 0, width: myTableView.bounds.width, height: 50)
+        return view
+    }()
     
     var todos: [Todo] = [] {
         didSet {
@@ -27,6 +36,7 @@ class MainVC: UIViewController {
         setupUI()
         setTableview()
         setupData()
+        configureRefreshControl()
     }
     
     private func setupUI() {
@@ -34,32 +44,53 @@ class MainVC: UIViewController {
     }
     
     
+    
+    
     private func setTableview() {
         myTableView.register(TodoCell.uinib, forCellReuseIdentifier: TodoCell.reuseIdentifier)
         myTableView.dataSource = self
         myTableView.delegate = self
+        myTableView.tableFooterView = self.indicatorView
     }
     
     private func setupData() {
-        self.TodosVM.notifyTodosChanged = { todos in
+        self.TodosVM.notifyTodosChanged = { [weak self] todos in
+            guard let self = self else { return }
             self.todos = todos
             DispatchQueue.main.async {
                 self.myTableView.reloadData()
             }
         }
         
-        self.TodosVM.notifyCurrentPage = { page in
+        self.TodosVM.notifyCurrentPage = { [weak self] page in
+            guard let self = self else { return }
             DispatchQueue.main.async {
                 self.pageInfoLabel.text = "현재 페이지 \(page)"
             }
         }
         
-        self.TodosVM.notifyIsLoading = { isLoading in
+        self.TodosVM.notifyIsLoading = { [weak self] isLoading in
+            guard let self = self else { return }
             DispatchQueue.main.async {
-                self.loadIndicator.isHidden = !isLoading
+                self.myTableView.tableFooterView = isLoading ? self.indicatorView : nil
+                if isLoading {
+                    self.myTableView.refreshControl?.beginRefreshing()
+                } else {
+                    self.myTableView.refreshControl?.endRefreshing()
+                }
             }
-            
         }
+    }
+    
+    private func configureRefreshControl () {
+        myTableView.refreshControl = UIRefreshControl()
+        myTableView.refreshControl?.addTarget(self, action:
+                                                #selector(handleRefreshControl),
+                                              for: .valueChanged)
+    }
+        
+    @objc func handleRefreshControl() {
+        TodosVM.fetchTodos(page: 1)
     }
 }
 

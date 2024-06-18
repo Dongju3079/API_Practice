@@ -18,7 +18,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="15" translatesAutoresizingMaskIntoConstraints="NO" id="T7x-ke-kXt" userLabel="ContainerStackView">
-                                <rect key="frame" x="0.0" y="59" width="393" height="240"/>
+                                <rect key="frame" x="0.0" y="59" width="393" height="190"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MainvVC / page : 0" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="taY-SS-Bpx">
                                         <rect key="frame" x="10" y="9.9999999999999982" width="373" height="20.333333333333329"/>
@@ -52,7 +52,7 @@
                                         </subviews>
                                     </stackView>
                                     <searchBar contentMode="redraw" translatesAutoresizingMaskIntoConstraints="NO" id="u6S-O5-ewm">
-                                        <rect key="frame" x="10" y="124" width="373" height="106"/>
+                                        <rect key="frame" x="10" y="124" width="373" height="56"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
                                             <outlet property="delegate" destination="Y6W-OH-hqX" id="FWg-bv-VKd"/>
@@ -62,39 +62,27 @@
                                 <color key="backgroundColor" systemColor="systemTealColor"/>
                                 <edgeInsets key="layoutMargins" top="10" left="10" bottom="10" right="10"/>
                             </stackView>
-                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="Ses-0V-Kc2">
-                                <rect key="frame" x="0.0" y="299" width="393" height="519"/>
-                                <subviews>
-                                    <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="Sbj-Vq-eTC">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="519"/>
-                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                    </tableView>
-                                    <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="Ohl-5S-wT0">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="50"/>
-                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="50" id="wub-YI-2dO"/>
-                                        </constraints>
-                                    </activityIndicatorView>
-                                </subviews>
-                            </stackView>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="Sbj-Vq-eTC">
+                                <rect key="frame" x="0.0" y="249" width="393" height="569"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            </tableView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="Ses-0V-Kc2" secondAttribute="bottom" id="5kI-Dh-xMw"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="Sbj-Vq-eTC" secondAttribute="bottom" id="4EC-Nx-e0H"/>
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="DPb-el-hmj"/>
-                            <constraint firstItem="Ses-0V-Kc2" firstAttribute="leading" secondItem="T7x-ke-kXt" secondAttribute="leading" id="K74-4m-Iax"/>
+                            <constraint firstItem="Sbj-Vq-eTC" firstAttribute="top" secondItem="T7x-ke-kXt" secondAttribute="bottom" id="JEu-5g-u5e"/>
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="centerX" secondItem="vDu-zF-Fre" secondAttribute="centerX" id="Ori-Sx-vo7"/>
-                            <constraint firstItem="Ses-0V-Kc2" firstAttribute="top" secondItem="T7x-ke-kXt" secondAttribute="bottom" id="hIQ-SE-nZs"/>
+                            <constraint firstItem="Sbj-Vq-eTC" firstAttribute="trailing" secondItem="T7x-ke-kXt" secondAttribute="trailing" id="iNW-p0-7yr"/>
                             <constraint firstItem="T7x-ke-kXt" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="k9f-eO-j7m"/>
-                            <constraint firstItem="Ses-0V-Kc2" firstAttribute="trailing" secondItem="T7x-ke-kXt" secondAttribute="trailing" id="lbU-VB-ELH"/>
+                            <constraint firstItem="Sbj-Vq-eTC" firstAttribute="leading" secondItem="T7x-ke-kXt" secondAttribute="leading" id="mjl-le-Gdr"/>
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="loadIndicator" destination="Ohl-5S-wT0" id="92c-gM-pbO"/>
                         <outlet property="myTableView" destination="Sbj-Vq-eTC" id="6IW-ff-Pd8"/>
                         <outlet property="pageInfoLabel" destination="taY-SS-Bpx" id="idf-Aq-I9X"/>
+                        <outlet property="searchBar" destination="u6S-O5-ewm" id="dHi-Bs-lS2"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

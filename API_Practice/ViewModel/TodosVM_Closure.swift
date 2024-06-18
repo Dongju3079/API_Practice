@@ -58,7 +58,7 @@ class TodosVM_Closure: ObservableObject {
 // MARK: - fetch Data
 extension TodosVM_Closure {
     
-    private func fetchTodos(page: Int = 1) {
+    func fetchTodos(page: Int = 1) {
         
         if isLoading {
             return
