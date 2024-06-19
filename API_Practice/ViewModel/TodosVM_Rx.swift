@@ -13,25 +13,14 @@ import RxCombine
 
 class TodosVM_Rx: ObservableObject {
     
-    let todosObservable = PublishSubject<[Todo]>()
+    var todosObservable: BehaviorRelay<[Todo]> = .init(value: [])
     
-    let disposeBag = DisposeBag()
+    var currentPageObservable : BehaviorRelay<Int> = .init(value: 1)
+    
+    var isLoading: BehaviorRelay<Bool> = .init(value: false)
     
     init() {
-        
-        TodosAPI_Rx.fetchTodosRxAddErrorTask()
-            .take(1)
-            .subscribe(
-                onNext: { [weak self] listResponse in
-                    guard let self = self,
-                          let todos = listResponse.data else { return }
-                    self.todosObservable.onNext(todos)
-                },
-                onError: { [weak self] err in
-                    self?.handleError(err)
-                }
-            )
-            .disposed(by: disposeBag)
+        self.fetchTodos(page: 1)
     }
     
     private func handleError(_ err: Error) {
@@ -48,6 +37,45 @@ class TodosVM_Rx: ObservableObject {
 
 // MARK: - fetch Data
 extension TodosVM_Rx {
+    
+    
+    private func fetchTodos(page: Int) {
+        print("테스트 fetchTodos : \(page)")
+        guard checkIsLoading() else { return }
+        
+        _ = TodosAPI_Rx.fetchTodosRxAddErrorTask(page: page)
+            .take(1)
+            .delay(.seconds(1), scheduler: ConcurrentDispatchQueueScheduler(qos: .default))
+            .withUnretained(self)
+            .subscribe(
+                onNext: { vm, listReponse in
+                    guard let todos = listReponse.data else { return }
+                    
+                    vm.currentPageObservable.accept(page)
+                    
+                    if page > 1 {
+                        let existingTodos = vm.todosObservable.value
+                        vm.todosObservable.accept(existingTodos + todos)
+                    } else {
+                        vm.todosObservable.accept(todos)
+                    }
+                },
+                onError: { [weak self] err in
+                    guard let self = self else { return }
+                    self.handleError(err)
+                },
+                onCompleted: { [weak self] in
+                    guard let self = self else { return }
+                    self.isLoading.accept(false)
+                }
+            )
+    }
+    
+    func fetchMoreTodos() {
+        self.fetchTodos(page: currentPageObservable.value + 1)
+    }
+
+    
     
 //    private func searchTodos() {
 //        TodosAPI_Rx.searchTodosRx(todosId: [2691, 2701, 2708, 2709])
@@ -243,3 +271,15 @@ extension TodosVM_Rx {
 //    }
 //}
 
+// MARK: - Helper
+extension TodosVM_Rx {
+    private func checkIsLoading() -> Bool {
+        
+        if isLoading.value {
+            return false
+        } else {
+            isLoading.accept(true)
+            return true
+        }
+    }
+}

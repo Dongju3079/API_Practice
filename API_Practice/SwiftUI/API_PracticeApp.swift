@@ -21,7 +21,7 @@ struct API_PracticeApp: App {
                         Text("SwiftUI")
                     }
                     .tag(0)
-                MainVC.instantiate()
+                RxMainVC.instantiate()
                     .getRepresentable()
                     .tabItem {
                         Image(systemName: "2.square.fill")

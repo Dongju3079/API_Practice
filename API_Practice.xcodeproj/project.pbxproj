@@ -10,6 +10,10 @@
 		5201FD362C1470BA00E32902 /* CombineExt in Frameworks */ = {isa = PBXBuildFile; productRef = 5201FD352C1470BA00E32902 /* CombineExt */; };
 		5201FD382C16682F00E32902 /* TodosAPI+Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5201FD372C16682F00E32902 /* TodosAPI+Async.swift */; };
 		5201FD3A2C166A1A00E32902 /* TodosVM_Async.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5201FD392C166A1A00E32902 /* TodosVM_Async.swift */; };
+		5233B5B52C22C2C000D5B42F /* RxMainVC.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5233B5B42C22C2C000D5B42F /* RxMainVC.storyboard */; };
+		5233B5B72C22C2D100D5B42F /* RxTodoCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5233B5B62C22C2D100D5B42F /* RxTodoCell.xib */; };
+		5233B5B92C22C2DA00D5B42F /* RxMainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5B82C22C2DA00D5B42F /* RxMainVC.swift */; };
+		5233B5BB2C22C2E100D5B42F /* RxTodoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5BA2C22C2E100D5B42F /* RxTodoCell.swift */; };
 		525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80722C074D790083C79D /* API_PracticeApp.swift */; };
 		525B80752C074D790083C79D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80742C074D790083C79D /* ContentView.swift */; };
 		525B80772C074D7A0083C79D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 525B80762C074D7A0083C79D /* Assets.xcassets */; };
@@ -51,6 +55,10 @@
 /* Begin PBXFileReference section */
 		5201FD372C16682F00E32902 /* TodosAPI+Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodosAPI+Async.swift"; sourceTree = "<group>"; };
 		5201FD392C166A1A00E32902 /* TodosVM_Async.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Async.swift; sourceTree = "<group>"; };
+		5233B5B42C22C2C000D5B42F /* RxMainVC.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = RxMainVC.storyboard; sourceTree = "<group>"; };
+		5233B5B62C22C2D100D5B42F /* RxTodoCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RxTodoCell.xib; sourceTree = "<group>"; };
+		5233B5B82C22C2DA00D5B42F /* RxMainVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxMainVC.swift; sourceTree = "<group>"; };
+		5233B5BA2C22C2E100D5B42F /* RxTodoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTodoCell.swift; sourceTree = "<group>"; };
 		525B806F2C074D790083C79D /* API_Practice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = API_Practice.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		525B80722C074D790083C79D /* API_PracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API_PracticeApp.swift; sourceTree = "<group>"; };
 		525B80742C074D790083C79D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -102,6 +110,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5233B5B22C22C28D00D5B42F /* ClosureTask */ = {
+			isa = PBXGroup;
+			children = (
+				525B80812C074FA50083C79D /* MainVC.storyboard */,
+				525B80832C074FAE0083C79D /* MainVC.swift */,
+				525B80852C0848C30083C79D /* TodoCell.xib */,
+				525B80872C084C020083C79D /* TodoCell.swift */,
+			);
+			path = ClosureTask;
+			sourceTree = "<group>";
+		};
+		5233B5B32C22C29B00D5B42F /* RxTask */ = {
+			isa = PBXGroup;
+			children = (
+				5233B5B42C22C2C000D5B42F /* RxMainVC.storyboard */,
+				5233B5B82C22C2DA00D5B42F /* RxMainVC.swift */,
+				5233B5B62C22C2D100D5B42F /* RxTodoCell.xib */,
+				5233B5BA2C22C2E100D5B42F /* RxTodoCell.swift */,
+			);
+			path = RxTask;
+			sourceTree = "<group>";
+		};
 		525B80662C074D790083C79D = {
 			isa = PBXGroup;
 			children = (
@@ -144,11 +174,9 @@
 		525B80802C074F8A0083C79D /* UIKit */ = {
 			isa = PBXGroup;
 			children = (
+				5233B5B32C22C29B00D5B42F /* RxTask */,
+				5233B5B22C22C28D00D5B42F /* ClosureTask */,
 				525B80892C084DEA0083C79D /* Ext */,
-				525B80812C074FA50083C79D /* MainVC.storyboard */,
-				525B80832C074FAE0083C79D /* MainVC.swift */,
-				525B80852C0848C30083C79D /* TodoCell.xib */,
-				525B80872C084C020083C79D /* TodoCell.swift */,
 			);
 			path = UIKit;
 			sourceTree = "<group>";
@@ -302,6 +330,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5233B5B52C22C2C000D5B42F /* RxMainVC.storyboard in Resources */,
+				5233B5B72C22C2D100D5B42F /* RxTodoCell.xib in Resources */,
 				525B80822C074FA50083C79D /* MainVC.storyboard in Resources */,
 				525B807A2C074D7A0083C79D /* Preview Assets.xcassets in Resources */,
 				525B80772C074D7A0083C79D /* Assets.xcassets in Resources */,
@@ -322,6 +352,7 @@
 				525B80752C074D790083C79D /* ContentView.swift in Sources */,
 				52FDF0B62C1C95B600A7C3E1 /* Task+Ext.swift in Sources */,
 				525B809F2C08DF940083C79D /* TodosAPI.swift in Sources */,
+				5233B5BB2C22C2E100D5B42F /* RxTodoCell.swift in Sources */,
 				525B80842C074FAE0083C79D /* MainVC.swift in Sources */,
 				525B808F2C084F210083C79D /* Identifier.swift in Sources */,
 				5201FD3A2C166A1A00E32902 /* TodosVM_Async.swift in Sources */,
@@ -335,6 +366,7 @@
 				52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */,
 				525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */,
 				529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */,
+				5233B5B92C22C2DA00D5B42F /* RxMainVC.swift in Sources */,
 				525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */,
 				525B80BB2C0F4C850083C79D /* UrlRequest+Ext.swift in Sources */,
 				525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */,

@@ -27,3 +27,22 @@ extension MainVC {
         VCRepresentable(mainVC: self)
     }
 }
+
+extension RxMainVC {
+    
+    private struct VCRepresentable: UIViewControllerRepresentable {
+        
+        let rxMainVC: RxMainVC
+        
+        func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
+        }
+        
+        func makeUIViewController(context: Context) -> some UIViewController {
+            return rxMainVC
+        }
+    }
+    
+    func getRepresentable() -> some View {
+        VCRepresentable(rxMainVC: self)
+    }
+}

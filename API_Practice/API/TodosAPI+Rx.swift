@@ -20,8 +20,6 @@ extension TodosAPI_Rx {
     
     static func fetchTodosRxAddErrorTask(page: Int = 1) -> Observable<ListResponse> {
         
-        return .error(ApiError.notAllowedUrl)
-        
         guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: ["page":"\(page)"]) else {
             return .error(ApiError.notAllowedUrl)
         }
