@@ -23,9 +23,9 @@ struct BaseResponse<T: Codable>: Codable {
 
 // MARK: - Todo
 struct Todo: Codable {
-    let id: Int?
-    let title: String?
-    let isDone: Bool?
+    var id: Int?
+    var title: String?
+    var isDone: Bool?
     let createdAt, updatedAt: String?
 
     enum CodingKeys: String, CodingKey {

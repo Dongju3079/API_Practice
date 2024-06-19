@@ -9,12 +9,7 @@ import UIKit
 
 class TodoCell: UITableViewCell {
     
-    var todo: Todo? {
-        didSet {
-            guard let todo = todo else { return }
-            self.setTodo(data: todo)
-        }
-    }
+    var todo: Todo? = nil
     
     var tappedEditBtn : ((Todo) -> Void)? = nil
     var tappedDeleteBtn : ((Todo) -> Void)? = nil
@@ -36,23 +31,26 @@ class TodoCell: UITableViewCell {
     
     @IBAction func onEditBtnClicked(_ sender: UIButton) {
         guard let todo = todo else { return }
+                
         self.tappedEditBtn?(todo)
     }
     
  
     @IBAction func onDeleteBtnClicked(_ sender: UIButton) {
         guard let todo = todo else { return }
+                
         self.tappedDeleteBtn?(todo)
     }
     
-    private func setTodo(data: Todo) {
-        guard let title = data.id,
-              let content = data.title,
-              let completed = data.isDone else { return }
+    func setTodo(todo: Todo, isCompleted: Set<Int>) {
+        guard let id = todo.id,
+              let content = todo.title else { return }
         
-        titleLabel.text = "\(title)"
+        self.todo = todo
+        
+        titleLabel.text = "\(id)"
         contentLabel.text = content
-        selectionSwitch.isOn = completed
+        selectionSwitch.isOn = isCompleted.contains(where: { $0 == id })
     }
     
     

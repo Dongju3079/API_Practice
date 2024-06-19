@@ -18,22 +18,30 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="15" translatesAutoresizingMaskIntoConstraints="NO" id="T7x-ke-kXt" userLabel="ContainerStackView">
-                                <rect key="frame" x="0.0" y="59" width="393" height="190"/>
+                                <rect key="frame" x="0.0" y="59.000000000000014" width="393" height="223.33333333333337"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MainvVC / page : 0" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="taY-SS-Bpx">
-                                        <rect key="frame" x="10" y="9.9999999999999982" width="373" height="20.333333333333329"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="선택된 할일 : []" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gbo-JF-5Fs">
-                                        <rect key="frame" x="10" y="45.333333333333329" width="373" height="20.333333333333329"/>
+                                    <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="17v-G4-U0F">
+                                        <rect key="frame" x="10" y="10" width="373" height="37"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MainvVC / page : 0" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="taY-SS-Bpx">
+                                                <rect key="frame" x="0.0" y="0.0" width="336" height="37"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="752" hidesWhenStopped="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="3Fp-vb-oVL">
+                                                <rect key="frame" x="336" y="0.0" width="37" height="37"/>
+                                            </activityIndicatorView>
+                                        </subviews>
+                                    </stackView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="완료된 할 일 :" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Gbo-JF-5Fs">
+                                        <rect key="frame" x="10" y="62" width="373" height="37"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="L9S-Ik-1E0">
-                                        <rect key="frame" x="10" y="80.666666666666657" width="373" height="28.333333333333329"/>
+                                        <rect key="frame" x="10" y="113.99999999999999" width="373" height="28.333333333333329"/>
                                         <subviews>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="p7N-f1-B7S">
                                                 <rect key="frame" x="0.0" y="0.0" width="180.66666666666666" height="28.333333333333332"/>
@@ -41,6 +49,9 @@
                                                 <buttonConfiguration key="configuration" style="filled" title="선택된 할 일 삭제">
                                                     <fontDescription key="titleFontDescription" type="boldSystem" pointSize="12"/>
                                                 </buttonConfiguration>
+                                                <connections>
+                                                    <action selector="tappedDeleteTodos:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="G1S-js-ISd"/>
+                                                </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D9Y-dz-zSC">
                                                 <rect key="frame" x="192.66666666666663" y="0.0" width="180.33333333333337" height="28.333333333333332"/>
@@ -55,7 +66,7 @@
                                         </subviews>
                                     </stackView>
                                     <searchBar contentMode="redraw" translatesAutoresizingMaskIntoConstraints="NO" id="u6S-O5-ewm">
-                                        <rect key="frame" x="10" y="124" width="373" height="56"/>
+                                        <rect key="frame" x="10" y="157.33333333333334" width="373" height="56"/>
                                         <textInputTraits key="textInputTraits"/>
                                         <connections>
                                             <outlet property="delegate" destination="Y6W-OH-hqX" id="FWg-bv-VKd"/>
@@ -63,14 +74,17 @@
                                     </searchBar>
                                 </subviews>
                                 <color key="backgroundColor" systemColor="systemTealColor"/>
+                                <constraints>
+                                    <constraint firstItem="17v-G4-U0F" firstAttribute="height" secondItem="Gbo-JF-5Fs" secondAttribute="height" id="RvA-0c-a8I"/>
+                                </constraints>
                                 <edgeInsets key="layoutMargins" top="10" left="10" bottom="10" right="10"/>
                             </stackView>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="Sbj-Vq-eTC">
-                                <rect key="frame" x="0.0" y="249" width="393" height="569"/>
+                                <rect key="frame" x="0.0" y="282.33333333333331" width="393" height="535.66666666666674"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="검색된 결과가 없습니다." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="THH-nK-Q7U">
-                                <rect key="frame" x="102.66666666666669" y="521.66666666666663" width="188" height="24"/>
+                                <rect key="frame" x="102.66666666666669" y="538.33333333333337" width="188" height="24"/>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="20"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -91,6 +105,8 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="completedTodosLabel" destination="Gbo-JF-5Fs" id="Ixh-t4-IoT"/>
+                        <outlet property="loadingIndicator" destination="3Fp-vb-oVL" id="TfA-G5-AGu"/>
                         <outlet property="myTableView" destination="Sbj-Vq-eTC" id="6IW-ff-Pd8"/>
                         <outlet property="noContentLabel" destination="THH-nK-Q7U" id="8gR-rI-hJa"/>
                         <outlet property="pageInfoLabel" destination="taY-SS-Bpx" id="idf-Aq-I9X"/>

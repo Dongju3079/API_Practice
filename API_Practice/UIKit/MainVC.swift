@@ -5,9 +5,6 @@
 //  Created by CatSlave on 5/29/24.
 //
 
-// 수정 후 해당 셀만 업데이트
-// 수정 후 해당 셀만 삭제
-
 import UIKit
 import SwiftUI
 
@@ -22,10 +19,13 @@ class MainVC: UIViewController {
     // MARK: - UI components
     @IBOutlet weak var myTableView: UITableView!
     @IBOutlet weak var pageInfoLabel: UILabel!
+    @IBOutlet weak var completedTodosLabel: UILabel!
     @IBOutlet weak var searchBar: UISearchBar!
     @IBOutlet weak var noContentLabel: UILabel!
     
-    lazy var indicatorView: UIActivityIndicatorView = {
+    @IBOutlet weak var loadingIndicator: UIActivityIndicatorView!
+    
+    lazy var indicatorInTableFooterView: UIActivityIndicatorView = {
         let view = UIActivityIndicatorView()
         view.color = .systemBlue
         view.startAnimating()
@@ -74,6 +74,9 @@ class MainVC: UIViewController {
         setupSearchBar()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        self.todosVM.fetchTodos(page: 1)
+    }
     
     
     // MARK: - UI Setup
@@ -95,6 +98,11 @@ class MainVC: UIViewController {
     // MARK: - Selectors
     @IBAction func tappedNewTodoBtn(_ sender: UIButton) {
         presentNewTodoAlert()
+    }
+    
+    
+    @IBAction func tappedDeleteTodos(_ sender: UIButton) {
+        self.todosVM.deleteCompletedTodos()
     }
     
     
@@ -128,10 +136,10 @@ class MainVC: UIViewController {
         }
         
         // 추가로 데이터를 받아오는 중인지
-        self.todosVM.notifyIsLoading = { [weak self] isLoading in
+        self.todosVM.notifyMoreDataIsLoading = { [weak self] isLoading in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                self.myTableView.tableFooterView = isLoading ? self.indicatorView : nil
+                self.myTableView.tableFooterView = isLoading ? self.indicatorInTableFooterView : nil
             }
         }
         
@@ -164,7 +172,37 @@ class MainVC: UIViewController {
             
             guard let self = self else { return }
             DispatchQueue.main.async {
-                self.presentErrorAlert(message: message)
+                self.presentGuideAlert(message: message)
+            }
+        }
+        
+        // 완료된 할 일 추가하기
+        self.todosVM.notifyCompletedTodos = { [weak self] todos in
+            guard let self = self else { return }
+                        
+            let stringRepresentation = todos.map { "\($0)" }.joined(separator: ", ")
+            
+            DispatchQueue.main.async {
+                self.completedTodosLabel.text = "완료된 할 일 : \(stringRepresentation)"
+            }
+        }
+        
+        // 완료된 일 삭제 로딩
+        self.todosVM.notifyIsLoading = { [weak self] isLoading in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if isLoading {
+                    self.loadingIndicator.startAnimating()
+                } else {
+                    self.loadingIndicator.stopAnimating()
+                }
+            }
+        }
+        
+        self.todosVM.notifyCompletedIsEmpty = { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.presentGuideAlert(message: "선택된 목록이 없습니다.")
             }
         }
     }
@@ -183,7 +221,7 @@ class MainVC: UIViewController {
     }
     
     // MARK: - Alert
-    private func presentErrorAlert(message: String?) {
+    private func presentGuideAlert(message: String?) {
         let alert = UIAlertController(title: "안내", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("닫기", comment: "Default action"), style: .cancel))
         self.present(alert, animated: true, completion: nil)
@@ -192,7 +230,7 @@ class MainVC: UIViewController {
     private func presentNewTodoAlert() {
         let alert = UIAlertController(title: "할 일 추가", message: "할 일을 입력하세요.", preferredStyle: .alert)
         alert.addTextField()
-        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("추가", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
             guard let alert = alert,
                   let self = self,
@@ -200,36 +238,67 @@ class MainVC: UIViewController {
             
             self.todosVM.addTodoFetchTodo(content: userInput)
         }))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
+        
         self.present(alert, animated: true, completion: nil)
     }
     
     private func presentEditTodoAlert(todo: Todo) {
         let alert = UIAlertController(title: "수정", message: "수정할 내용을 입력하세요.", preferredStyle: .alert)
         alert.addTextField()
-        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("완료", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
             guard let alert = alert,
                   let self = self,
                   let userInput = alert.textFields?.first?.text else { return }
             
-            self.todosVM.editTodoEncoded(editTodo: todo, content: userInput)
+            self.todosVM.editTodoEncoded(todo: todo, editContent: userInput)
         }))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
+        
         self.present(alert, animated: true, completion: nil)
     }
     
     private func presentDeleteTodoAlert(todo : Todo) {
         let alert = UIAlertController(title: "삭제", message: "할 일을 삭제합니다.", preferredStyle: .alert)
-        
+        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("확인", comment: "Default action"), style: .default, handler: { [weak self] _ in
             guard let self = self else { return }
             
-            self.todosVM.deleteTodoEncoded(editTodo: todo)
+            self.todosVM.deleteTodo(todo: todo)
         }))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
+        
         self.present(alert, animated: true, completion: nil)
     }
+}
+
+// MARK: - Cell Event
+extension MainVC {
+    private func tappedEditBtn(todo: Todo) {
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.presentEditTodoAlert(todo: todo)
+        }
+    }
+    
+    private func tappedDeleteBtn(todo: Todo) {
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.presentDeleteTodoAlert(todo: todo)
+        }
+    }
+    
+    private func tappedSwitch(todo: Todo, isOn: Bool) {
+        
+        self.todosVM.editTodoEncoded(todo: todo, changeIsDone: isOn) { [weak self] in
+            guard let self = self,
+                  let id = todo.id else { return }
+            
+            self.todosVM.changeCompleted(todoId: id, isOn: isOn)
+        }
+    }
+    
+    
 }
 
 extension MainVC : UITableViewDataSource {
@@ -240,28 +309,15 @@ extension MainVC : UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TodoCell.reuseIdentifier, for: indexPath) as? TodoCell else { return UITableViewCell() }
         
-        cell.todo = todos[indexPath.row]
+        let todo = todos[indexPath.row]
         
-        cell.tappedEditBtn = { [weak self] todo in
-            
-            DispatchQueue.main.async {
-                self?.presentEditTodoAlert(todo: todo)
-            }
-        }
+        cell.setTodo(todo: todo, isCompleted: self.todosVM.completedTodosId)
         
-        cell.tappedDeleteBtn = { [weak self] todo in
-            
-            DispatchQueue.main.async {
-                self?.presentDeleteTodoAlert(todo: todo)
-            }
-        }
+        cell.tappedEditBtn = tappedEditBtn(todo:)
+    
+        cell.tappedDeleteBtn = tappedDeleteBtn(todo:) 
         
-        cell.tappedSwitch = { [weak self] todo, isOn in
-        
-        DispatchQueue.main.async {
-            self?.todosVM.editTodoCompleted(editTodo: todo, isDone: isOn)
-        }
-    }
+        cell.tappedSwitch = tappedSwitch(todo:isOn:)
         
         return cell
     }

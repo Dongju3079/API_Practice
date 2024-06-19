@@ -16,7 +16,6 @@ extension TodosAPI_Closure {
     typealias TodoResponse = BaseResponse<Todo>
     typealias ResultListData = Result<ListResponse, ApiError>
     typealias ResultTodoData = Result<TodoResponse, ApiError>
-    typealias ResultTodos = Result<[Todo], ApiError>
     
     static func fetchTodosClosure(page: Int = 1, completion: @escaping (ResultListData) -> Void) {
         print("테스트 fetch Url")
@@ -205,7 +204,7 @@ extension TodosAPI_Closure {
         urlRequest.percentEncodeParameters(parameters: requestParams)
         
         URLSession.shared.dataTask(with: urlRequest) { data, response, err in
-            if let err = checkResponse(err: err, response: response) {
+            if let err = checkResponse(data: data, err: err, response: response) {
                 return completion(.failure(err))
             }
             
@@ -314,19 +313,20 @@ extension TodosAPI_Closure {
     }
     
     // MARK: - API 동시 호출
-    static func deleteTodosClosure(id: [Int], completion: @escaping (ResultTodos) -> Void) {
+    static func deleteTodosClosure(id: [Int], completion: @escaping ([Int]) -> Void) {
         
         let group = DispatchGroup()
         
-        var deleteTodos = [Todo]()
+        var deleteTodos = [Int]()
         
         id.forEach { id in
             group.enter()
             self.deleteTodoClosure(id: id) { result in
                 switch result {
                 case .success(let todoData):
-                    guard let todo = todoData.data else { return }
-                    deleteTodos.append(todo)
+                    guard let todo = todoData.data,
+                          let id = todo.id else { return }
+                    deleteTodos.append(id)
                     group.leave()
                 case .failure(_):
                     print("삭제 실패")
@@ -337,7 +337,7 @@ extension TodosAPI_Closure {
         group.notify(queue: .main) {
             print("테스트 deleteTodo : \(deleteTodos)")
             
-            completion(.success(deleteTodos))
+            completion(deleteTodos)
         }
         
     }
@@ -432,18 +432,18 @@ extension TodosAPI_Closure {
         }
     }
     
-    static func deleteTodosClosureToAsync(id: [Int]) async throws -> [Todo] {
-        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Todo], Error>) in
-            self.deleteTodosClosure(id: id) { result in
-                switch result {
-                case .success(let todos):
-                    continuation.resume(returning: todos)
-                case .failure(let err):
-                    continuation.resume(throwing: err)
-                }
-            }
-        }
-    }
+//    static func deleteTodosClosureToAsync(id: [Int]) async throws -> [Todo] {
+//        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Todo], Error>) in
+//            self.deleteTodosClosure(id: id) { result in
+//                switch result {
+//                case .success(let todos):
+//                    continuation.resume(returning: todos)
+//                case .failure(let err):
+//                    continuation.resume(throwing: err)
+//                }
+//            }
+//        }
+//    }
 }
 
 // MARK: - Closure To Rx
@@ -562,14 +562,14 @@ extension TodosAPI_Closure {
         }
     }
     
-    static func deleteTodosClosureToRx(id: [Int]) -> Observable<ResultTodos> {
-        return Observable.create { emitter in
-            self.deleteTodosClosure(id: id) { result in
-                emitter.onNext(result)
-            }
-            return Disposables.create()
-        }
-    }
+//    static func deleteTodosClosureToRx(id: [Int]) -> Observable<ResultTodos> {
+//        return Observable.create { emitter in
+//            self.deleteTodosClosure(id: id) { result in
+//                emitter.onNext(result)
+//            }
+//            return Disposables.create()
+//        }
+//    }
 }
 
 // MARK: - Closure To Combine
@@ -730,28 +730,28 @@ extension TodosAPI_Closure {
         .eraseToAnyPublisher()
     }
     
-    static func deleteTodosClosureToCombine(id: [Int])  -> AnyPublisher<[Todo], ApiError> {
-        return Future { (promise: @escaping (Result<[Todo], ApiError>) -> Void) in
-            deleteTodosClosure(id: id) { result in
-                promise(result)
-            }
-        }
-        .tryMap({ result in
-            if result.isEmpty {
-                throw ApiError.noContent
-            } else {
-                return result
-            }
-        })
-        .mapError({ err in
-            if let apiError = err as? ApiError {
-                return apiError
-            }
-            
-            return ApiError.unknown(err)
-        })
-        .eraseToAnyPublisher()
-    }
+//    static func deleteTodosClosureToCombine(id: [Int])  -> AnyPublisher<[Todo], ApiError> {
+//        return Future { (promise: @escaping (Result<[Todo], ApiError>) -> Void) in
+//            deleteTodosClosure(id: id) { result in
+//                promise(result)
+//            }
+//        }
+//        .tryMap({ result in
+//            if result.isEmpty {
+//                throw ApiError.noContent
+//            } else {
+//                return result
+//            }
+//        })
+//        .mapError({ err in
+//            if let apiError = err as? ApiError {
+//                return apiError
+//            }
+//            
+//            return ApiError.unknown(err)
+//        })
+//        .eraseToAnyPublisher()
+//    }
 }
 
 // MARK: - Hepler
