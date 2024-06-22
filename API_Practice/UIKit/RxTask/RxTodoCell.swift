@@ -13,7 +13,7 @@ class RxTodoCell: UITableViewCell {
     
     var tappedEditBtn : ((Todo) -> Void)? = nil
     var tappedDeleteBtn : ((Todo) -> Void)? = nil
-    var tappedSwitch : ((Todo, Bool) -> Void)? = nil
+    var tappedSwitch : ((Int, Bool) -> Void)? = nil
     
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var contentLabel: UILabel!
@@ -25,8 +25,8 @@ class RxTodoCell: UITableViewCell {
     }
     
     @IBAction func onSwitchClicked(_ sender: UISwitch) {
-        guard let todo = todo else { return }
-        self.tappedSwitch?(todo, selectionSwitch.isOn)
+        guard let id = todo?.id else { return }
+        self.tappedSwitch?(id, selectionSwitch.isOn)
     }
     
     @IBAction func onEditBtnClicked(_ sender: UIButton) {

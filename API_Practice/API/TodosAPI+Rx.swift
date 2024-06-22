@@ -64,7 +64,7 @@ extension TodosAPI_Rx {
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
-        return getBaseResponse(request, ListResponse.self)
+        return getBaseResponseResultType(request, ListResponse.self)
     }
     
     static func addTodoRxByMultipart(content: String, isDone: Bool = false) -> Observable<ResultTodoData> {
@@ -88,7 +88,7 @@ extension TodosAPI_Rx {
         // 실제 데이터
         urlRequest.httpBody = form.bodyData
         
-        return getBaseResponse(urlRequest, TodoResponse.self)
+        return getBaseResponseResultType(urlRequest, TodoResponse.self)
     }
     
     static func addTodoRxByJson(content: String, isDone: Bool = false) -> Observable<ResultTodoData> {
@@ -113,15 +113,17 @@ extension TodosAPI_Rx {
             return .just(.failure(.jsonEncoding))
         }
         
-        return getBaseResponse(urlRequest, TodoResponse.self)
+        return getBaseResponseResultType(urlRequest, TodoResponse.self)
     }
     
-    static func searchTodosRx(searchTerm: String, page: Int = 1) -> Observable<ResultTodoData> {
+    static func searchTodosRx(searchTerm: String, page: Int = 1) -> Observable<ListResponse> {
+        
+        print("테스트 searchTerm_api : \(searchTerm)")
         
         let queryItems = ["query": searchTerm, "page": "\(page)"]
         
-        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos", queryItems: queryItems) else {
-            return .just(.failure(.notAllowedUrl))
+        guard let url = URL(baseUrl: baseUrl, optionUrl: "/todos/search", queryItems: queryItems) else {
+            return .error(ApiError.notAllowedUrl)
         }
         
         var request = URLRequest(url: url)
@@ -129,7 +131,7 @@ extension TodosAPI_Rx {
         request.addValue("application/json", forHTTPHeaderField: "accept")
         
         
-        return getBaseResponse(request, TodoResponse.self)
+        return getBaseResponse(request, ListResponse.self)
     }
     
     static func searchTodoRx(id: Int) -> Observable<TodoResponse> {
@@ -168,7 +170,7 @@ extension TodosAPI_Rx {
         urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         urlRequest.percentEncodeParameters(parameters: requestParams)
         
-        return getBaseResponse(urlRequest, TodoResponse.self)
+        return getBaseResponseResultType(urlRequest, TodoResponse.self)
     }
     
     static func editTodoRxByJson(id: Int, content: String, isDone: Bool) -> Observable<ResultTodoData> {
@@ -191,7 +193,7 @@ extension TodosAPI_Rx {
             return Observable.just(.failure(.jsonEncoding))
         }
         
-        return getBaseResponse(urlRequest, TodoResponse.self)
+        return getBaseResponseResultType(urlRequest, TodoResponse.self)
     }
     
     static func deleteTodoRx(id: Int) -> Observable<TodoResponse> {
@@ -229,14 +231,12 @@ extension TodosAPI_Rx {
     }
     
     // MARK: - API 연쇄 호출
-    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> Observable<[Todo]> {
+    static func addTodoAndFetchTodos(content: String, isDone: Bool = false) -> Observable<ListResponse> {
         
         return addTodoRxByJson(content: content, isDone: isDone)
             .flatMapLatest { _ in
                 fetchTodosRxAddErrorTask()
             }
-            .compactMap { $0.data }
-            .catchAndReturn([])
             .share(replay: 1)
     }
     
@@ -312,12 +312,13 @@ extension TodosAPI_Rx {
 // MARK: - Hepler
 extension TodosAPI_Rx {
     
+    // MARK: - Return Result Type
     /// UrlSession을 통해서 받은 데이터 값을 T 모델로 파싱
     /// - Parameters:
     ///   - request: 요청 값
     ///   - type: 파싱하고자 하는 모델
     /// - Returns: Observable<T, Error>
-    private static func getBaseResponse<T: Decodable>(_ request: URLRequest, _ type: T.Type) -> Observable<Result<T, ApiError>> {
+    private static func getBaseResponseResultType<T: Decodable>(_ request: URLRequest, _ type: T.Type) -> Observable<Result<T, ApiError>> {
         return URLSession.shared.rx
             .response(request: request)
             .map { (response: HTTPURLResponse, data: Data) -> Data in//-> Result<T, ApiError> in
@@ -330,7 +331,7 @@ extension TodosAPI_Rx {
             .decode(type: type, decoder: JSONDecoder())
             .map { .success($0) }
             .catch { err -> Observable<Result<T, ApiError>> in
-                if let err = err as? DecodingError {
+                if let _ = err as? DecodingError {
                     return .just(.failure(.decodingError))
                 }
                 
@@ -342,27 +343,30 @@ extension TodosAPI_Rx {
             }
     }
     
-    /// 데이터 파싱
-    /// - Parameters:
-    ///   - data: UrlSession을 통해서 전달받은 data
-    ///   - type: 파싱 모델
-    /// - Returns: Result<T, Error>
-    private static func parseJsonBase<T: Decodable>(_ data: Data,_ type: T.Type) -> Result<T, ApiError> {
-        do {
-            let response = try JSONDecoder().decode(T.self, from: data)
-            
-            if let baseList = response as? ListResponse,
-               let todos = baseList.data,
-               todos.isEmpty {
-                return .failure(.noContent)
+    // MARK: - Return Single Type
+    private static func getBaseResponse<T: Decodable>(_ request: URLRequest, _ type: T.Type) -> Observable<T> {
+        return URLSession.shared.rx
+            .response(request: request)
+            .map { (response: HTTPURLResponse, data: Data) -> Data in//-> Result<T, ApiError> in
+                if let err = checkResponse(response) {
+                    throw err
+                }
+                
+                return data
             }
-            
-            return .success(response)
-        } catch {
-            return .failure(.decodingError)
-        }
+            .decode(type: type, decoder: JSONDecoder())
+            .catch { err in
+                if let _ = err as? DecodingError {
+                    throw TodosAPI_Rx.ApiError.decodingError
+                }
+                
+                if let _ = err as? ApiError {
+                    throw err
+                }
+                
+                throw TodosAPI_Rx.ApiError.unknown(err)
+            }
     }
-    
     
     /// 응답결과를 내부 조건에 따라서 ApiError로 return
     /// - Parameter response: UrlSession 응답값

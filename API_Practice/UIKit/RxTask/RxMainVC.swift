@@ -16,7 +16,6 @@ class RxMainVC: UIViewController {
     private var todosVM = TodosVM_Rx()
     private let disposeBag = DisposeBag()
     
-    private var searchTermInputWorkItem: DispatchWorkItem?
     
     // MARK: - UI components
     @IBOutlet weak var myTableView: UITableView!
@@ -69,51 +68,69 @@ class RxMainVC: UIViewController {
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
         setTableview()
+        setOutputFromViewModel()
+        setOutputFromUI()
         configureRefreshControl()
-        setupSearchBar()
     }
-    
-    override func viewDidAppear(_ animated: Bool) {
-//        self.todosVM.fetchTodos(page: 1)
-    }
-    
     
     // MARK: - UI Setup
-    private func setupUI() {
-        view.backgroundColor = .white
-    }
-    
-    private func setupSearchBar() {
-        self.searchBar.delegate = self
-    }
-    
-    
+
     private func setTableview() {
         myTableView.register(RxTodoCell.uinib, forCellReuseIdentifier: RxTodoCell.reuseIdentifier)
-        myTableView.delegate = self
-        
-        todosVM.todosObservable
-            .observe(on: MainScheduler.instance)
-            .bind(to: myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier)) { index, item, cell in
-                guard let cell = cell as? RxTodoCell else { return }
-                cell.setTodo(todo: item)
-            }
+    }
+    
+    private func setOutputFromUI() {
+        self.myTableView
+            .rx.isBottomNeared
+            .bind(onNext: self.todosVM.fetchMoreTodos)
             .disposed(by: disposeBag)
         
-//        self.todosVM.notifyMoreDataIsLoading = { [weak self] isLoading in
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                self.myTableView.tableFooterView = isLoading ? self.indicatorInTableFooterView : nil
-//            }
-//        }
-        todosVM.isLoading
-            .observe(on: MainScheduler.instance)
-            .withUnretained(self)
-            .subscribe { (vc, isLoading) in
-                vc.myTableView.tableFooterView = isLoading ? vc.indicatorInTableFooterView : nil
+        // text.changed : 값이 변경되면 그대로 보내줌
+        // text.orEmpty : 값이 변경되면 언랩핑 후 보내줌
+        self.searchBar.searchTextField.rx.text.orEmpty
+            .do(onNext: { _ in
+                print("테스트 searchBar send)")
+            })
+            .bind(onNext: self.todosVM.searchTerm.accept(_:))
+            .disposed(by: disposeBag)
+    }
+    
+    private func setOutputFromViewModel() {
+        todosVM.notifyTodos
+        // observe(on:), catchAndReture(), strong self
+            .asDriver(onErrorJustReturn: [])
+            .drive(myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self] index, item, cell in
+                
+                guard let self = self else { return }
+                
+                cell.setTodo(todo: item)
+                
+                cell.tappedSwitch = tappedSwitch(id:isOn:)
             }
+            .disposed(by: disposeBag)
+         
+        todosVM.notifyPage
+            .asDriver(onErrorJustReturn: "페이지 정보가 없습니다.")
+            .drive(self.pageInfoLabel.rx.text)
+            .disposed(by: disposeBag)
+        
+        todosVM.notifyIsLoading
+            .asDriver(onErrorJustReturn: false)
+            .map({ $0 ? self.indicatorInTableFooterView : nil })
+            .drive(self.myTableView.rx.tableFooterView)
+            .disposed(by: disposeBag)
+        
+        todosVM.notifyHasNextPage
+            .asDriver(onErrorJustReturn: false)
+            .map { !$0 ? self.noPageView : nil }
+            .drive(self.myTableView.rx.tableFooterView)
+            .disposed(by: disposeBag)
+        
+        todosVM.notifyCompletedTodo
+            .map({ "완료된 일 : \($0)" })
+            .asDriver(onErrorJustReturn: "완료된 일 :")
+            .drive(self.completedTodosLabel.rx.text)
             .disposed(by: disposeBag)
     }
     
@@ -126,7 +143,7 @@ class RxMainVC: UIViewController {
     }
     
     @IBAction func tappedDeleteTodos(_ sender: UIButton) {
-//        self.todosVM.deleteCompletedTodos()
+//        self.todosVM.searchTodos()
     }
     
     // MARK: - Refresh
@@ -158,7 +175,7 @@ class RxMainVC: UIViewController {
                   let self = self,
                   let userInput = alert.textFields?.first?.text else { return }
             
-//            self.todosVM.addTodoFetchTodo(content: userInput)
+            self.todosVM.addTodo(content: userInput)
         }))
         
         self.present(alert, animated: true, completion: nil)
@@ -210,72 +227,14 @@ extension RxMainVC {
         }
     }
     
-    private func tappedSwitch(todo: Todo, isOn: Bool) {
-        
-//        self.todosVM.editTodoEncoded(todo: todo, changeIsDone: isOn) { [weak self] in
-//            guard let self = self,
-//                  let id = todo.id else { return }
-//            
-//            self.todosVM.changeCompleted(todoId: id, isOn: isOn)
-//        }
+    private func tappedSwitch(id: Int, isOn: Bool) {
+        self.todosVM.handleTodoSelection(id: id, isDone: isOn)
     }
     
     
 }
 
-//extension RxMainVC : UITableViewDataSource {
-//    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        return todos.count
-//    }
-//    
-//    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        guard let cell = tableView.dequeueReusableCell(withIdentifier: TodoCell.reuseIdentifier, for: indexPath) as? TodoCell else { return UITableViewCell() }
-//        
-//        let todo = todos[indexPath.row]
-//        
-//        cell.setTodo(todo: todo, isCompleted: self.todosVM.completedTodosId)
-//        
-//        cell.tappedEditBtn = tappedEditBtn(todo:)
-//    
-//        cell.tappedDeleteBtn = tappedDeleteBtn(todo:)
-//        
-//        cell.tappedSwitch = tappedSwitch(todo:isOn:)
-//        
-//        return cell
-//    }
-//    
-//    
-//}
 
-extension RxMainVC: UITableViewDelegate {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        
-        let viewHeight = scrollView.frame.size.height
-        let contentHeight = scrollView.contentSize.height
-        let offsetY = scrollView.contentOffset.y
-        let threshold : CGFloat = contentHeight - (offsetY + 200)
-        
-        if threshold < viewHeight {
-            
-            self.todosVM.fetchMoreTodos()
-        }
-    }
-}
-
-extension RxMainVC: UISearchBarDelegate {
-    
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        self.searchTermInputWorkItem?.cancel()
-        
-        let dispatchWorkItem = DispatchWorkItem {
-//            self.todosVM.searchTerm = searchText
-        }
-        
-        self.searchTermInputWorkItem = dispatchWorkItem
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: dispatchWorkItem)
-    }
-}
 
 
 

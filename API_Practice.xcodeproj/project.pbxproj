@@ -14,6 +14,8 @@
 		5233B5B72C22C2D100D5B42F /* RxTodoCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5233B5B62C22C2D100D5B42F /* RxTodoCell.xib */; };
 		5233B5B92C22C2DA00D5B42F /* RxMainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5B82C22C2DA00D5B42F /* RxMainVC.swift */; };
 		5233B5BB2C22C2E100D5B42F /* RxTodoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5BA2C22C2E100D5B42F /* RxTodoCell.swift */; };
+		5233B5BF2C24226000D5B42F /* Optional+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5BE2C24226000D5B42F /* Optional+Ext.swift */; };
+		5233B5C12C2573F500D5B42F /* UIScrollview+Reactive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5233B5C02C2573F500D5B42F /* UIScrollview+Reactive.swift */; };
 		525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80722C074D790083C79D /* API_PracticeApp.swift */; };
 		525B80752C074D790083C79D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80742C074D790083C79D /* ContentView.swift */; };
 		525B80772C074D7A0083C79D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 525B80762C074D7A0083C79D /* Assets.xcassets */; };
@@ -59,6 +61,8 @@
 		5233B5B62C22C2D100D5B42F /* RxTodoCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RxTodoCell.xib; sourceTree = "<group>"; };
 		5233B5B82C22C2DA00D5B42F /* RxMainVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxMainVC.swift; sourceTree = "<group>"; };
 		5233B5BA2C22C2E100D5B42F /* RxTodoCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RxTodoCell.swift; sourceTree = "<group>"; };
+		5233B5BE2C24226000D5B42F /* Optional+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Optional+Ext.swift"; sourceTree = "<group>"; };
+		5233B5C02C2573F500D5B42F /* UIScrollview+Reactive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIScrollview+Reactive.swift"; sourceTree = "<group>"; };
 		525B806F2C074D790083C79D /* API_Practice.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = API_Practice.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		525B80722C074D790083C79D /* API_PracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API_PracticeApp.swift; sourceTree = "<group>"; };
 		525B80742C074D790083C79D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -243,6 +247,8 @@
 				528B96492C1A98A100DF249D /* ObservableType+Ext.swift */,
 				52FDF0B52C1C95B600A7C3E1 /* Task+Ext.swift */,
 				529C82452C210DA700B076A6 /* ViewController+Ext.swift */,
+				5233B5BE2C24226000D5B42F /* Optional+Ext.swift */,
+				5233B5C02C2573F500D5B42F /* UIScrollview+Reactive.swift */,
 			);
 			path = Ext;
 			sourceTree = "<group>";
@@ -361,6 +367,7 @@
 				525B808D2C084E590083C79D /* Nibbed.swift in Sources */,
 				525B80C12C11DC740083C79D /* TodosAPI+Combine.swift in Sources */,
 				525B80B22C0F04510083C79D /* TodosVM_Closure.swift in Sources */,
+				5233B5BF2C24226000D5B42F /* Optional+Ext.swift in Sources */,
 				525B80BD2C103C8C0083C79D /* TodosAPI+Rx.swift in Sources */,
 				525B809D2C08DEAD0083C79D /* TodoResponse.swift in Sources */,
 				52FDF0B42C1ADB4C00A7C3E1 /* Publisher+Ext.swift in Sources */,
@@ -377,6 +384,7 @@
 				525B80992C08CF4B0083C79D /* TodoRow.swift in Sources */,
 				525B80882C084C020083C79D /* TodoCell.swift in Sources */,
 				525B80A52C0EFDA50083C79D /* ErrorResponse.swift in Sources */,
+				5233B5C12C2573F500D5B42F /* UIScrollview+Reactive.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

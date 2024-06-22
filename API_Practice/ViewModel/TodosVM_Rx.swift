@@ -13,14 +13,66 @@ import RxCombine
 
 class TodosVM_Rx: ObservableObject {
     
-    var todosObservable: BehaviorRelay<[Todo]> = .init(value: [])
+    // 1. Observable : 데이터 전달 1회 후 완료
+    // 2. BehaviorRelay - 지속적인 사용 가능 (마지막에 받은 데이터 .value 로 접근 가능)
+    // 3. PublishRelay
     
-    var currentPageObservable : BehaviorRelay<Int> = .init(value: 1)
+    private var disposeBag = DisposeBag()
     
-    var isLoading: BehaviorRelay<Bool> = .init(value: false)
+    // 값을 가지고 여러곳에서 사용되고 있음
+    private var todos: BehaviorRelay<[Todo]> = .init(value: [])
+    private var completedTodos: BehaviorRelay<Set<Int>> = .init(value: Set())
+    private var pageInfo : BehaviorRelay<Meta?> = .init(value: nil)
+    private var currentPage : BehaviorRelay<Int> = .init(value: 1)
+    private var isLoading: BehaviorRelay<Bool> = .init(value: false)
+    var searchTerm: BehaviorRelay<String> = .init(value: "")
+    
+    
+    // 값을 가질 필요가 없음
+    var notifyTodos: Observable<[Todo]>
+    var notifyPage : Observable<String>
+    var notifyHasNextPage : Observable<Bool>
+    var notifyIsLoading : Observable<Bool>
+    var notifyCompletedTodo : Observable<String>
     
     init() {
-        self.fetchTodos(page: 1)
+        self.pageInfo
+            .compactMap{ $0 }
+            .map{
+                if let currentPage = $0.currentPage {
+                    return currentPage
+                } else {
+                    return 1
+                }
+            }
+            .bind(onNext: self.currentPage.accept(_:))
+            .disposed(by: disposeBag)
+        
+        // VM에서 처리해서 보내주는 형식
+        self.notifyTodos = todos.map({ $0 })
+        self.notifyPage = currentPage.map({ "페이지 : \($0)" })
+        self.notifyHasNextPage = pageInfo.skip(1).map({ $0?.hasNext() ?? false })
+        self.notifyIsLoading = isLoading.map({ $0 })
+        self.notifyCompletedTodo = completedTodos.map({ $0.map { "\($0)" }.joined(separator: ", ") })
+        
+        self.searchTerm
+            .debug("searchTerm debug")
+            .withUnretained(self)
+            .do(onNext: { vm, _ in
+                vm.todos.accept([])
+            })
+            .debounce(.milliseconds(700), scheduler: MainScheduler.instance)
+            .subscribe { vm, searchTerm in
+                if searchTerm.count > 0 {
+                    self.pageInfo.accept(nil)
+                    self.currentPage.accept(1)
+                    self.searchTodo(term: searchTerm, page: vm.currentPage.value)
+                } else {
+                    self.fetchTodos(page: 1)
+                }
+            }
+            .disposed(by: disposeBag)
+
     }
     
     private func handleError(_ err: Error) {
@@ -38,58 +90,101 @@ class TodosVM_Rx: ObservableObject {
 // MARK: - fetch Data
 extension TodosVM_Rx {
     
+    func fetchMoreTodos() {
+        guard let pageInfo = self.pageInfo.value,
+              pageInfo.hasNext() else { return }
+        
+        if searchTerm.value.isEmpty {
+            self.fetchTodos(page: self.currentPage.value + 1)
+        } else {
+            let term = searchTerm.value
+            let page = currentPage.value + 1
+            self.searchTodo(term: term, page: page)
+        }
+    }
     
     private func fetchTodos(page: Int) {
-        print("테스트 fetchTodos : \(page)")
+        
         guard checkIsLoading() else { return }
         
-        _ = TodosAPI_Rx.fetchTodosRxAddErrorTask(page: page)
-            .take(1)
-            .delay(.seconds(1), scheduler: ConcurrentDispatchQueueScheduler(qos: .default))
-            .withUnretained(self)
+        TodosAPI_Rx.fetchTodosRxAddErrorTask(page: page)
+            .delay(.milliseconds(700), scheduler: MainScheduler.instance)
+            .compactMap { Optional(tuple: ($0.meta, $0.data)) }
             .subscribe(
-                onNext: { vm, listReponse in
-                    guard let todos = listReponse.data else { return }
+                onNext: { (meta, fetchTodos) in
                     
-                    vm.currentPageObservable.accept(page)
-                    
-                    if page > 1 {
-                        let existingTodos = vm.todosObservable.value
-                        vm.todosObservable.accept(existingTodos + todos)
+                    if page == 1 {
+                        self.todos.accept(fetchTodos)
                     } else {
-                        vm.todosObservable.accept(todos)
+                        let existingTodos = self.todos.value
+                        self.todos.accept(existingTodos + fetchTodos)
                     }
-                },
-                onError: { [weak self] err in
-                    guard let self = self else { return }
-                    self.handleError(err)
-                },
-                onCompleted: { [weak self] in
-                    guard let self = self else { return }
                     self.isLoading.accept(false)
+                    self.pageInfo.accept(meta)
+                },onError: { err in
+                    self.isLoading.accept(false)
+                    self.handleError(err)
+                })
+            .disposed(by: disposeBag)
+    }
+    
+    private func searchTodo(term: String, page: Int) {
+        
+        guard checkIsLoading() else { return }
+        
+        TodosAPI_Rx.searchTodosRx(searchTerm: term, page: page)
+            .delay(.milliseconds(700 ), scheduler: MainScheduler.instance)
+            .compactMap { Optional(tuple: ($0.meta, $0.data)) }
+            .subscribe(
+                onNext: { (meta, fetchTodos) in
+
+                    if page == 1 {
+                        self.todos.accept(fetchTodos)
+                    } else {
+                        let existingTodos = self.todos.value
+                        self.todos.accept(existingTodos + fetchTodos)
+                    }
+                    self.isLoading.accept(false)
+                    self.pageInfo.accept(meta)
+                },onError: { err in
+                    self.isLoading.accept(false)
+                    self.handleError(err)
                 }
             )
+            .disposed(by: disposeBag)
     }
     
-    func fetchMoreTodos() {
-        self.fetchTodos(page: currentPageObservable.value + 1)
+    func addTodo(content: String) {
+        TodosAPI_Rx.addTodoAndFetchTodos(content: content)
+            .compactMap { Optional(tuple: ($0.meta, $0.data)) }
+            .subscribe(
+                onNext: { (meta, fetchTodos) in
+                    
+                    self.todos.accept(fetchTodos)
+                    
+                    self.isLoading.accept(false)
+                    self.pageInfo.accept(meta)
+                },onError: { err in
+                    self.isLoading.accept(false)
+                    self.handleError(err)
+                })
+            .disposed(by: disposeBag)
     }
-
     
-    
-//    private func searchTodos() {
-//        TodosAPI_Rx.searchTodosRx(todosId: [2691, 2701, 2708, 2709])
-//            .debug()
-//            .observe(on: MainScheduler.instance)
-//            .subscribe(onNext: { todos in
-//                todos.forEach {
-//                    guard let id = $0.id else { return }
-//                    print("테스트 할 일 : \(id)")
-//                }
-//            })
-//            .disposed(by: disposeBag)
-//    }
-    
+    func handleTodoSelection(id : Int, isDone: Bool) {
+        
+        var selectionTodo = self.completedTodos.value
+        
+        if isDone {
+            selectionTodo.insert(id)
+            self.completedTodos.accept(selectionTodo)
+            
+        } else {
+            selectionTodo.remove(id)
+            self.completedTodos.accept(selectionTodo)
+        }
+        
+    }
 //    private func deleteTodosZip() {
 //        TodosAPI_Rx.deleteTodosRxZip(selectedTodos: [5149, 5169, 5163, 5162, 5160, 5159, 5158, 5156, 5154, 5153])
 //            .observe(on: MainScheduler.instance)
@@ -283,3 +378,5 @@ extension TodosVM_Rx {
         }
     }
 }
+
+
