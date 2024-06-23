@@ -49,9 +49,6 @@
                                                 <buttonConfiguration key="configuration" style="filled" title="선택된 할 일 삭제">
                                                     <fontDescription key="titleFontDescription" type="boldSystem" pointSize="12"/>
                                                 </buttonConfiguration>
-                                                <connections>
-                                                    <action selector="tappedDeleteTodos:" destination="Qyw-D6-svM" eventType="touchUpInside" id="QqK-q4-dMh"/>
-                                                </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3Oh-nQ-2NV">
                                                 <rect key="frame" x="192.66666666666663" y="0.0" width="180.33333333333337" height="28.333333333333332"/>
@@ -59,9 +56,6 @@
                                                 <buttonConfiguration key="configuration" style="filled" title="할 일 추가">
                                                     <fontDescription key="titleFontDescription" type="boldSystem" pointSize="12"/>
                                                 </buttonConfiguration>
-                                                <connections>
-                                                    <action selector="tappedNewTodoBtn:" destination="Qyw-D6-svM" eventType="touchUpInside" id="ZcT-WS-VcJ"/>
-                                                </connections>
                                             </button>
                                         </subviews>
                                     </stackView>
@@ -102,6 +96,8 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="addTodoBtn" destination="3Oh-nQ-2NV" id="7VP-aD-a8w"/>
+                        <outlet property="completedTodosDeleteBtn" destination="te1-nN-4WN" id="bto-Bj-Q26"/>
                         <outlet property="completedTodosLabel" destination="KJv-RJ-hbs" id="uJM-VP-kiP"/>
                         <outlet property="loadingIndicator" destination="ypT-y7-VRu" id="geY-wA-SQz"/>
                         <outlet property="myTableView" destination="tlS-gJ-mzQ" id="kyI-Gd-Joi"/>

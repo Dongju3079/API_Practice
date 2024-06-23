@@ -19,21 +19,26 @@ class TodosVM_Rx: ObservableObject {
     
     private var disposeBag = DisposeBag()
     
+    // VC -> VM
+    var searchTerm: BehaviorRelay<String> = .init(value: "")
+    
     // 값을 가지고 여러곳에서 사용되고 있음
     private var todos: BehaviorRelay<[Todo]> = .init(value: [])
     private var completedTodos: BehaviorRelay<Set<Int>> = .init(value: Set())
     private var pageInfo : BehaviorRelay<Meta?> = .init(value: nil)
     private var currentPage : BehaviorRelay<Int> = .init(value: 1)
     private var isLoading: BehaviorRelay<Bool> = .init(value: false)
-    var searchTerm: BehaviorRelay<String> = .init(value: "")
     
-    
-    // 값을 가질 필요가 없음
+    // 값을 가질 필요가 없음 VM -> VC
     var notifyTodos: Observable<[Todo]>
     var notifyPage : Observable<String>
     var notifyHasNextPage : Observable<Bool>
     var notifyIsLoading : Observable<Bool>
     var notifyCompletedTodo : Observable<String>
+    
+    // 값을 가질 필요가 없으나 VM에서 이벤트 또는 값을 받을 수 있어야 함 VM -> VC
+    var notifyTodosAdded = PublishSubject<Void>()
+    var notifyRefresh = PublishSubject<Void>()
     
     init() {
         self.pageInfo
@@ -90,6 +95,10 @@ class TodosVM_Rx: ObservableObject {
 // MARK: - fetch Data
 extension TodosVM_Rx {
     
+    func fetchRefresh() {
+        self.fetchTodos(page: 1)
+    }
+    
     func fetchMoreTodos() {
         guard let pageInfo = self.pageInfo.value,
               pageInfo.hasNext() else { return }
@@ -110,18 +119,21 @@ extension TodosVM_Rx {
         TodosAPI_Rx.fetchTodosRxAddErrorTask(page: page)
             .delay(.milliseconds(700), scheduler: MainScheduler.instance)
             .compactMap { Optional(tuple: ($0.meta, $0.data)) }
+            .withUnretained(self)
             .subscribe(
-                onNext: { (meta, fetchTodos) in
+                onNext: { (vm, response) in
                     
                     if page == 1 {
-                        self.todos.accept(fetchTodos)
+                        vm.todos.accept(response.1)
                     } else {
                         let existingTodos = self.todos.value
-                        self.todos.accept(existingTodos + fetchTodos)
+                        vm.todos.accept(existingTodos + response.1)
                     }
-                    self.isLoading.accept(false)
-                    self.pageInfo.accept(meta)
-                },onError: { err in
+                    vm.notifyRefresh.onNext(())
+                    vm.isLoading.accept(false)
+                    vm.pageInfo.accept(response.0)
+                },onError: { [weak self] err in
+                    guard let self = self else { return }
                     self.isLoading.accept(false)
                     self.handleError(err)
                 })
@@ -157,17 +169,19 @@ extension TodosVM_Rx {
     func addTodo(content: String) {
         TodosAPI_Rx.addTodoAndFetchTodos(content: content)
             .compactMap { Optional(tuple: ($0.meta, $0.data)) }
-            .subscribe(
-                onNext: { (meta, fetchTodos) in
-                    
-                    self.todos.accept(fetchTodos)
-                    
-                    self.isLoading.accept(false)
-                    self.pageInfo.accept(meta)
-                },onError: { err in
-                    self.isLoading.accept(false)
-                    self.handleError(err)
-                })
+            .withUnretained(self)
+            .subscribe(onNext: { vm, response in
+                vm.todos.accept(response.1)
+                
+                vm.isLoading.accept(false)
+                vm.pageInfo.accept(response.0)
+                vm.notifyTodosAdded.onNext(())
+                
+            },onError: { [weak self] err in
+                guard let self = self else { return }
+                self.isLoading.accept(false)
+                self.handleError(err)
+            })
             .disposed(by: disposeBag)
     }
     
@@ -185,6 +199,24 @@ extension TodosVM_Rx {
         }
         
     }
+    
+    func completedTodosDelete() {
+        TodosAPI_Rx.deleteTodosRxZip(selectedTodos: Array(self.completedTodos.value))
+            .withUnretained(self)
+            .subscribe (onNext: { vm, completedTodosId in
+                let existingTodosList = vm.todos.value
+                let existingCompletedTodos = vm.completedTodos.value
+
+                let afterTaskTodosList = existingTodosList.filter { !completedTodosId.contains($0.id ?? 0)}
+                
+                let afterTaskCompletedTodos = existingCompletedTodos.filter { !completedTodosId.contains($0)}
+                
+                vm.completedTodos.accept(afterTaskCompletedTodos)
+                vm.todos.accept(afterTaskTodosList)
+            })
+            .disposed(by: disposeBag)
+    }
+    
 //    private func deleteTodosZip() {
 //        TodosAPI_Rx.deleteTodosRxZip(selectedTodos: [5149, 5169, 5163, 5162, 5160, 5159, 5158, 5156, 5154, 5153])
 //            .observe(on: MainScheduler.instance)
@@ -378,5 +410,6 @@ extension TodosVM_Rx {
         }
     }
 }
+
 
 

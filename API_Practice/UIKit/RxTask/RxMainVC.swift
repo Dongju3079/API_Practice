@@ -21,9 +21,10 @@ class RxMainVC: UIViewController {
     @IBOutlet weak var myTableView: UITableView!
     @IBOutlet weak var pageInfoLabel: UILabel!
     @IBOutlet weak var completedTodosLabel: UILabel!
+    @IBOutlet weak var completedTodosDeleteBtn: UIButton!
+    @IBOutlet weak var addTodoBtn: UIButton!
     @IBOutlet weak var searchBar: UISearchBar!
     @IBOutlet weak var noContentLabel: UILabel!
-    
     @IBOutlet weak var loadingIndicator: UIActivityIndicatorView!
     
     lazy var indicatorInTableFooterView: UIActivityIndicatorView = {
@@ -64,6 +65,7 @@ class RxMainVC: UIViewController {
         return view
     }()
     
+    let refreshControl = UIRefreshControl()
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
@@ -71,28 +73,47 @@ class RxMainVC: UIViewController {
         setTableview()
         setOutputFromViewModel()
         setOutputFromUI()
-        configureRefreshControl()
     }
     
     // MARK: - UI Setup
 
     private func setTableview() {
         myTableView.register(RxTodoCell.uinib, forCellReuseIdentifier: RxTodoCell.reuseIdentifier)
+        
+        myTableView.refreshControl = refreshControl
     }
     
     private func setOutputFromUI() {
         self.myTableView
             .rx.isBottomNeared
-            .bind(onNext: self.todosVM.fetchMoreTodos)
+            .bind(onNext: todosVM.fetchMoreTodos)
             .disposed(by: disposeBag)
         
-        // text.changed : 값이 변경되면 그대로 보내줌
-        // text.orEmpty : 값이 변경되면 언랩핑 후 보내줌
+        self.refreshControl.rx.controlEvent(.valueChanged)
+            .withUnretained(self)
+            .subscribe(onNext: { vc, _ in
+                vc.todosVM.fetchRefresh()
+            }).disposed(by: disposeBag)
+        
         self.searchBar.searchTextField.rx.text.orEmpty
-            .do(onNext: { _ in
-                print("테스트 searchBar send)")
+            .withUnretained(self)
+            .subscribe(onNext: { (vc, input) in
+                vc.todosVM.searchTerm.accept(input)
             })
-            .bind(onNext: self.todosVM.searchTerm.accept(_:))
+            .disposed(by: disposeBag)
+        
+        self.completedTodosDeleteBtn.rx.tap
+            .withUnretained(self)
+            .subscribe { vc, _ in
+                vc.todosVM.completedTodosDelete()
+            }
+            .disposed(by: disposeBag)
+        
+        self.addTodoBtn.rx.tap
+            .withUnretained(self)
+            .subscribe { vc, _ in
+                vc.presentNewTodoAlert()
+            }
             .disposed(by: disposeBag)
     }
     
@@ -106,57 +127,53 @@ class RxMainVC: UIViewController {
                 
                 cell.setTodo(todo: item)
                 
-                cell.tappedSwitch = tappedSwitch(id:isOn:)
+                cell.tappedSwitch = self.tappedSwitch(id:isOn:)
             }
             .disposed(by: disposeBag)
          
         todosVM.notifyPage
             .asDriver(onErrorJustReturn: "페이지 정보가 없습니다.")
-            .drive(self.pageInfoLabel.rx.text)
+            .drive(pageInfoLabel.rx.text)
             .disposed(by: disposeBag)
         
         todosVM.notifyIsLoading
-            .asDriver(onErrorJustReturn: false)
-            .map({ $0 ? self.indicatorInTableFooterView : nil })
-            .drive(self.myTableView.rx.tableFooterView)
+            .withUnretained(self)
+            .map({ vc, isLoading -> UIView? in
+                isLoading ? vc.indicatorInTableFooterView : nil
+            })
+            .asDriver(onErrorJustReturn: nil)
+            .drive(myTableView.rx.tableFooterView)
             .disposed(by: disposeBag)
         
+        todosVM.notifyRefresh
+            .observe(on: MainScheduler.instance)
+            .withUnretained(self)
+            .subscribe(onNext: { vc, _ in
+                vc.refreshControl.endRefreshing()
+            }).disposed(by: disposeBag)
+        
         todosVM.notifyHasNextPage
-            .asDriver(onErrorJustReturn: false)
-            .map { !$0 ? self.noPageView : nil }
-            .drive(self.myTableView.rx.tableFooterView)
+            .withUnretained(self)
+            .map({ vc, isLoading -> UIView? in
+                isLoading ? vc.indicatorInTableFooterView : nil
+            })
+            .asDriver(onErrorJustReturn: nil)
+            .drive(myTableView.rx.tableFooterView)
             .disposed(by: disposeBag)
         
         todosVM.notifyCompletedTodo
             .map({ "완료된 일 : \($0)" })
             .asDriver(onErrorJustReturn: "완료된 일 :")
-            .drive(self.completedTodosLabel.rx.text)
+            .drive(completedTodosLabel.rx.text)
             .disposed(by: disposeBag)
-    }
-    
-    
-    // MARK: - Selectors
-    
-    
-    @IBAction func tappedNewTodoBtn(_ sender: UIButton) {
-        self.presentNewTodoAlert()
-    }
-    
-    @IBAction func tappedDeleteTodos(_ sender: UIButton) {
-//        self.todosVM.searchTodos()
-    }
-    
-    // MARK: - Refresh
-    private func configureRefreshControl () {
-        myTableView.refreshControl = UIRefreshControl()
-        myTableView.refreshControl?.addTarget(self, action:
-                                                #selector(handleRefreshControl),
-                                              for: .valueChanged)
-    }
         
-    @objc func handleRefreshControl() {
-        self.searchBar.searchTextField.text = nil
-//        todosVM.fetchRefresh()
+        todosVM.notifyTodosAdded
+            .observe(on: MainScheduler.instance)
+            .bind(onNext: { [weak self] in
+                guard let self = self else { return }
+                self.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Alert
@@ -233,6 +250,8 @@ extension RxMainVC {
     
     
 }
+
+
 
 
 
