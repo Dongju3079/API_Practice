@@ -124,10 +124,13 @@ class RxMainVC: UIViewController {
             .drive(myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self] index, item, cell in
                 
                 guard let self = self else { return }
-                
-                cell.setTodo(todo: item)
-                
-                cell.tappedSwitch = self.tappedSwitch(id:isOn:)
+            
+                cell.setTodo(item)
+                cell.tappedSwitch = { todo, isDone in
+                    self.todosVM.editTodo(todo: todo, changeIsDone: isDone)
+                }
+                cell.tappedEditBtn = self.presentEditTodoAlert(todo:existingContent:)
+                cell.tappedDeleteBtn = self.presentDeleteTodoAlert(id:)
             }
             .disposed(by: disposeBag)
          
@@ -139,10 +142,19 @@ class RxMainVC: UIViewController {
         todosVM.notifyIsLoading
             .withUnretained(self)
             .map({ vc, isLoading -> UIView? in
-                isLoading ? vc.indicatorInTableFooterView : nil
+                print("테스트 3 : \(isLoading)")
+                return isLoading ? vc.indicatorInTableFooterView : nil
             })
             .asDriver(onErrorJustReturn: nil)
             .drive(myTableView.rx.tableFooterView)
+            .disposed(by: disposeBag)
+        
+        todosVM.notifyIsLoading
+            .observe(on: MainScheduler.instance)
+            .withUnretained(self)
+            .subscribe(onNext: { vc, isLoading in
+                isLoading ? vc.loadingIndicator.startAnimating() : vc.loadingIndicator.stopAnimating()
+            })
             .disposed(by: disposeBag)
         
         todosVM.notifyRefresh
@@ -154,8 +166,8 @@ class RxMainVC: UIViewController {
         
         todosVM.notifyHasNextPage
             .withUnretained(self)
-            .map({ vc, isLoading -> UIView? in
-                isLoading ? vc.indicatorInTableFooterView : nil
+            .map({ vc, hasNextPage -> UIView? in
+                hasNextPage ? nil : vc.noPageView
             })
             .asDriver(onErrorJustReturn: nil)
             .drive(myTableView.rx.tableFooterView)
@@ -174,6 +186,22 @@ class RxMainVC: UIViewController {
                 self.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        todosVM.notifyNoContent
+            .withUnretained(self)
+            .observe(on: MainScheduler.instance)
+            .map({ vc, isEmpty -> UIView? in
+                isEmpty ? vc.noContentView : nil
+            })
+            .asDriver(onErrorJustReturn: nil)
+            .drive(myTableView.rx.backgroundView)
+            .disposed(by: disposeBag)
+        
+        todosVM.notifyError
+            .withUnretained(self)
+            .subscribe(onNext: { vc, input in
+                vc.presentGuideAlert(message: input)
+            }).disposed(by: disposeBag)
     }
     
     // MARK: - Alert
@@ -198,57 +226,33 @@ class RxMainVC: UIViewController {
         self.present(alert, animated: true, completion: nil)
     }
     
-    private func presentEditTodoAlert(todo: Todo) {
+    private func presentEditTodoAlert(todo: Todo, existingContent: String) {
         let alert = UIAlertController(title: "수정", message: "수정할 내용을 입력하세요.", preferredStyle: .alert)
         alert.addTextField()
+        alert.textFields?.first?.text = existingContent
         alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("완료", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
             guard let alert = alert,
                   let self = self,
                   let userInput = alert.textFields?.first?.text else { return }
             
-//            self.todosVM.editTodoEncoded(todo: todo, editContent: userInput)
+            self.todosVM.editTodo(todo: todo, editContent: userInput)
         }))
         
         self.present(alert, animated: true, completion: nil)
     }
     
-    private func presentDeleteTodoAlert(todo : Todo) {
+    private func presentDeleteTodoAlert(id : Int) {
         let alert = UIAlertController(title: "삭제", message: "할 일을 삭제합니다.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("확인", comment: "Default action"), style: .default, handler: { [weak self] _ in
             guard let self = self else { return }
             
-//            self.todosVM.deleteTodo(todo: todo)
+            self.todosVM.deleteTodo(id)
         }))
         
         self.present(alert, animated: true, completion: nil)
     }
-}
-
-// MARK: - Cell Event
-extension RxMainVC {
-    private func tappedEditBtn(todo: Todo) {
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.presentEditTodoAlert(todo: todo)
-        }
-    }
-    
-    private func tappedDeleteBtn(todo: Todo) {
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.presentDeleteTodoAlert(todo: todo)
-        }
-    }
-    
-    private func tappedSwitch(id: Int, isOn: Bool) {
-        self.todosVM.handleTodoSelection(id: id, isDone: isOn)
-    }
-    
-    
 }
 
 

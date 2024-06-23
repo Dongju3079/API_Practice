@@ -55,7 +55,7 @@
                             </button>
                         </subviews>
                     </stackView>
-                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7xo-2Y-7ux">
+                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="7xo-2Y-7ux">
                         <rect key="frame" x="415" y="48.333333333333336" width="51" height="31.000000000000007"/>
                         <connections>
                             <action selector="onSwitchClicked:" destination="xoz-m5-ni1" eventType="valueChanged" id="KTn-CJ-gIu"/>

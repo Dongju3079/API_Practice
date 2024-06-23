@@ -11,9 +11,9 @@ class RxTodoCell: UITableViewCell {
     
     var todo: Todo? = nil
     
-    var tappedEditBtn : ((Todo) -> Void)? = nil
-    var tappedDeleteBtn : ((Todo) -> Void)? = nil
-    var tappedSwitch : ((Int, Bool) -> Void)? = nil
+    var tappedEditBtn : ((Todo, String) -> Void)? = nil
+    var tappedDeleteBtn : ((Int) -> Void)? = nil
+    var tappedSwitch : ((Todo, Bool) -> Void)? = nil
     
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var contentLabel: UILabel!
@@ -25,32 +25,33 @@ class RxTodoCell: UITableViewCell {
     }
     
     @IBAction func onSwitchClicked(_ sender: UISwitch) {
-        guard let id = todo?.id else { return }
-        self.tappedSwitch?(id, selectionSwitch.isOn)
+        guard let todo = todo else { return }
+        
+        self.tappedSwitch?(todo, selectionSwitch.isOn)
     }
     
     @IBAction func onEditBtnClicked(_ sender: UIButton) {
-        guard let todo = todo else { return }
-                
-        self.tappedEditBtn?(todo)
+        guard let todo = todo,
+              let existingContent = todo.title else { return }
+        self.tappedEditBtn?(todo, existingContent)
     }
     
  
     @IBAction func onDeleteBtnClicked(_ sender: UIButton) {
-        guard let todo = todo else { return }
-                
-        self.tappedDeleteBtn?(todo)
+        guard let id = todo?.id else { return }
+        self.tappedDeleteBtn?(id)
     }
     
-    func setTodo(todo: Todo) {  // , isCompleted: Set<Int>
+    func setTodo(_ todo: Todo) {  //
         guard let id = todo.id,
-              let content = todo.title else { return }
+              let content = todo.title,
+              let isDone = todo.isDone else { return }
         
         self.todo = todo
         
         titleLabel.text = "\(id)"
         contentLabel.text = content
-//        selectionSwitch.isOn = isCompleted.contains(where: { $0 == id })
+        selectionSwitch.isOn = isDone
     }
     
     

@@ -156,10 +156,10 @@ extension TodosAPI_Rx {
             }
     }
     
-    static func editTodoRxEncoded(id: Int, content: String, isDone: Bool) -> Observable<ResultTodoData> {
+    static func editTodoRxEncoded(id: Int, content: String, isDone: Bool) -> Observable<TodoResponse> {
         
         guard let url = URL(string: baseUrl + "/todos" + "/\(id)") else {
-            return .just(.failure(.notAllowedUrl))
+            return .error(ApiError.notAllowedUrl)
         }
         
         let requestParams = ["title" : content, "is_done" : "\(isDone)"]
@@ -170,7 +170,7 @@ extension TodosAPI_Rx {
         urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         urlRequest.percentEncodeParameters(parameters: requestParams)
         
-        return getBaseResponseResultType(urlRequest, TodoResponse.self)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
     static func editTodoRxByJson(id: Int, content: String, isDone: Bool) -> Observable<ResultTodoData> {
@@ -210,7 +210,7 @@ extension TodosAPI_Rx {
         return URLSession.shared.rx
             .response(request: urlRequest)
             .map { (response: HTTPURLResponse, data: Data) in
-                if let err = checkResponse(response) {
+                if let err = checkResponse(data, response) {
                     throw err
                 }
                 
@@ -322,7 +322,7 @@ extension TodosAPI_Rx {
         return URLSession.shared.rx
             .response(request: request)
             .map { (response: HTTPURLResponse, data: Data) -> Data in//-> Result<T, ApiError> in
-                if let err = checkResponse(response) {
+                if let err = checkResponse(data, response) {
                     throw err// return .failure(err)
                 }
                 
@@ -348,7 +348,7 @@ extension TodosAPI_Rx {
         return URLSession.shared.rx
             .response(request: request)
             .map { (response: HTTPURLResponse, data: Data) -> Data in//-> Result<T, ApiError> in
-                if let err = checkResponse(response) {
+                if let err = checkResponse(data, response) {
                     throw err
                 }
                 
@@ -371,7 +371,7 @@ extension TodosAPI_Rx {
     /// 응답결과를 내부 조건에 따라서 ApiError로 return
     /// - Parameter response: UrlSession 응답값
     /// - Returns: ApiError?
-    private static func checkResponse(_ response: URLResponse?) -> ApiError? {
+    private static func checkResponse(_ data: Data, _ response: URLResponse) -> ApiError? {
         
         guard let httpResponse = response as? HTTPURLResponse else {
             return .unknown(nil)
@@ -380,6 +380,12 @@ extension TodosAPI_Rx {
         switch httpResponse.statusCode {
         case 401:
             return .unauthorized
+        case 422:
+            guard let responseError = try? JSONDecoder().decode(ErrorResponse.self, from: data) else {
+                
+                return ApiError.decodingError
+            }
+            return ApiError.errResponseFromServer(responseError)
       
         case 204:
             return .noContent

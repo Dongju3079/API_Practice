@@ -36,11 +36,31 @@ class TodosVM_Rx: ObservableObject {
     var notifyIsLoading : Observable<Bool>
     var notifyCompletedTodo : Observable<String>
     
+    
     // 값을 가질 필요가 없으나 VM에서 이벤트 또는 값을 받을 수 있어야 함 VM -> VC
     var notifyTodosAdded = PublishSubject<Void>()
     var notifyRefresh = PublishSubject<Void>()
+    var notifyNoContent = PublishSubject<Bool>()
+    var notifyError = PublishSubject<String>()
     
     init() {
+        // VM에서 처리해서 보내주는 형식
+        self.notifyTodos = todos.map({ $0 })
+        self.notifyPage = currentPage.map({ "페이지 : \($0)" })
+        self.notifyHasNextPage = pageInfo.skip(1).map({ $0?.hasNext() ?? false })
+        self.notifyIsLoading = isLoading.map({ $0 })
+        self.notifyCompletedTodo = completedTodos.map({ $0.map { "\($0)" }.joined(separator: ", ") })
+        
+        self.todos
+            .map {
+                let completedTodos = $0.filter { $0.isDone == true }.compactMap { $0.id }
+                let setCompletedTodos = Set(completedTodos)
+                return setCompletedTodos }
+            .withUnretained(self)
+            .subscribe(onNext: { vm, completedTodo in
+                vm.completedTodos.accept(completedTodo)
+            }).disposed(by: disposeBag)
+        
         self.pageInfo
             .compactMap{ $0 }
             .map{
@@ -50,21 +70,18 @@ class TodosVM_Rx: ObservableObject {
                     return 1
                 }
             }
-            .bind(onNext: self.currentPage.accept(_:))
+            .withUnretained(self)
+            .bind(onNext: { vm, page in
+                vm.currentPage.accept(page)
+            })
             .disposed(by: disposeBag)
-        
-        // VM에서 처리해서 보내주는 형식
-        self.notifyTodos = todos.map({ $0 })
-        self.notifyPage = currentPage.map({ "페이지 : \($0)" })
-        self.notifyHasNextPage = pageInfo.skip(1).map({ $0?.hasNext() ?? false })
-        self.notifyIsLoading = isLoading.map({ $0 })
-        self.notifyCompletedTodo = completedTodos.map({ $0.map { "\($0)" }.joined(separator: ", ") })
         
         self.searchTerm
             .debug("searchTerm debug")
             .withUnretained(self)
             .do(onNext: { vm, _ in
                 vm.todos.accept([])
+                vm.notifyNoContent.onNext(false)
             })
             .debounce(.milliseconds(700), scheduler: MainScheduler.instance)
             .subscribe { vm, searchTerm in
@@ -83,17 +100,29 @@ class TodosVM_Rx: ObservableObject {
     private func handleError(_ err: Error) {
         
         guard let apiError = err as? TodosAPI_Rx.ApiError else {
-            print("알 수 없는 에러입니다.")
+            let unknownError = TodosAPI_Rx.ApiError.unknown(err)
+            notifyError.onNext(unknownError.info)
             return
         }
         
-        print(apiError.info)
+        switch apiError {
+        case .noContent:
+            notifyNoContent.onNext((true))
+        case .errResponseFromServer(let errorResponse):
+            notifyError.onNext(errorResponse?.message ?? "알 수 없는 에러")
+        default:
+            notifyError.onNext(apiError.info)
+        }
     }
     
 }
 
 // MARK: - fetch Data
 extension TodosVM_Rx {
+    
+//    func getCompletedTodo() -> [Int] {
+//        return Array(self.completedTodos.value)
+//    }
     
     func fetchRefresh() {
         self.fetchTodos(page: 1)
@@ -145,7 +174,7 @@ extension TodosVM_Rx {
         guard checkIsLoading() else { return }
         
         TodosAPI_Rx.searchTodosRx(searchTerm: term, page: page)
-            .delay(.milliseconds(700 ), scheduler: MainScheduler.instance)
+            .delay(.milliseconds(700), scheduler: MainScheduler.instance)
             .compactMap { Optional(tuple: ($0.meta, $0.data)) }
             .subscribe(
                 onNext: { (meta, fetchTodos) in
@@ -167,7 +196,10 @@ extension TodosVM_Rx {
     }
     
     func addTodo(content: String) {
+        guard checkIsLoading() else { return }
+        
         TodosAPI_Rx.addTodoAndFetchTodos(content: content)
+            .delay(.milliseconds(700), scheduler: MainScheduler.instance)
             .compactMap { Optional(tuple: ($0.meta, $0.data)) }
             .withUnretained(self)
             .subscribe(onNext: { vm, response in
@@ -201,7 +233,11 @@ extension TodosVM_Rx {
     }
     
     func completedTodosDelete() {
+        
+        guard checkIsLoading() else { return }
+        
         TodosAPI_Rx.deleteTodosRxZip(selectedTodos: Array(self.completedTodos.value))
+            .delay(.milliseconds(700), scheduler: MainScheduler.instance)
             .withUnretained(self)
             .subscribe (onNext: { vm, completedTodosId in
                 let existingTodosList = vm.todos.value
@@ -213,10 +249,61 @@ extension TodosVM_Rx {
                 
                 vm.completedTodos.accept(afterTaskCompletedTodos)
                 vm.todos.accept(afterTaskTodosList)
+                vm.isLoading.accept(false)
+            }, onError: { [weak self] err in
+                guard let self = self else { return }
+                self.handleError(err)
+                self.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
     }
     
+    func deleteTodo(_ id: Int) {
+        guard checkIsLoading() else { return }
+        
+        TodosAPI_Rx.deleteTodoRx(id: id)
+            .withUnretained(self)
+            .subscribe(onNext: { vm, response in
+                guard let deleteTodo = response.data else { return }
+                let existingTodosList = vm.todos.value
+                let afterTaskTodosList = existingTodosList.filter { $0.id != deleteTodo.id }
+                vm.todos.accept(afterTaskTodosList)
+                vm.isLoading.accept(false)
+            }, onError: { [weak self] err in
+                guard let self = self else { return }
+                self.handleError(err)
+                self.isLoading.accept(false)
+            }).disposed(by: disposeBag)
+    }
+    
+    func editTodo(todo: Todo, editContent: String? = nil, changeIsDone: Bool? = nil) {
+        
+        guard checkIsLoading() else { return }
+        
+        guard let id = todo.id,
+              let existingContent = todo.title,
+              let existingIsDone = todo.isDone,
+              let index = self.todos.value.firstIndex(where: { $0.id == id }) else { return }
+        
+        let content = editContent ?? existingContent
+        let isDone = changeIsDone ?? existingIsDone
+        
+        TodosAPI_Rx.editTodoRxEncoded(id: id, content: content, isDone: isDone)
+            .withUnretained(self)
+            .subscribe(onNext: { vm, response in
+                guard let todo = response.data else { return }
+                var todosList = vm.todos.value
+                todosList[index] = todo
+                vm.todos.accept(todosList)
+                self.isLoading.accept(false)
+            }, onError: { [weak self] err in
+                guard let self = self else { return }
+                self.handleError(err)
+                self.isLoading.accept(false)
+            }).disposed(by: disposeBag)
+            
+        
+    }
 //    private func deleteTodosZip() {
 //        TodosAPI_Rx.deleteTodosRxZip(selectedTodos: [5149, 5169, 5163, 5162, 5160, 5159, 5158, 5156, 5154, 5153])
 //            .observe(on: MainScheduler.instance)

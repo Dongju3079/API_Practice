@@ -35,7 +35,6 @@ class TodoCell: UITableViewCell {
         self.tappedEditBtn?(todo)
     }
     
- 
     @IBAction func onDeleteBtnClicked(_ sender: UIButton) {
         guard let todo = todo else { return }
                 
