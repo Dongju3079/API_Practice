@@ -91,10 +91,10 @@ extension TodosAPI_Rx {
         return getBaseResponseResultType(urlRequest, TodoResponse.self)
     }
     
-    static func addTodoRxByJson(content: String, isDone: Bool = false) -> Observable<ResultTodoData> {
+    static func addTodoRxByJson(content: String, isDone: Bool = false) -> Observable<TodoResponse> {
         
         guard let url = URL(string: baseUrl + "/todos-json") else {
-            return .just(.failure(.notAllowedUrl))
+            return .error(ApiError.notAllowedUrl)
         }
         
         var urlRequest = URLRequest(url: url)
@@ -110,10 +110,10 @@ extension TodosAPI_Rx {
             urlRequest.httpBody = jsonData
         } catch {
             
-            return .just(.failure(.jsonEncoding))
+            return .error(ApiError.jsonEncoding)
         }
         
-        return getBaseResponseResultType(urlRequest, TodoResponse.self)
+        return getBaseResponse(urlRequest, TodoResponse.self)
     }
     
     static func searchTodosRx(searchTerm: String, page: Int = 1) -> Observable<ListResponse> {

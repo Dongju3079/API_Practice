@@ -234,6 +234,7 @@ extension TodosVM_Rx {
     
     func completedTodosDelete() {
         
+        guard !self.completedTodos.value.isEmpty else { return }
         guard checkIsLoading() else { return }
         
         TodosAPI_Rx.deleteTodosRxZip(selectedTodos: Array(self.completedTodos.value))

@@ -133,44 +133,37 @@ class RxMainVC: UIViewController {
                 cell.tappedDeleteBtn = self.presentDeleteTodoAlert(id:)
             }
             .disposed(by: disposeBag)
-         
+        
         todosVM.notifyPage
             .asDriver(onErrorJustReturn: "페이지 정보가 없습니다.")
             .drive(pageInfoLabel.rx.text)
             .disposed(by: disposeBag)
         
         todosVM.notifyIsLoading
-            .withUnretained(self)
-            .map({ vc, isLoading -> UIView? in
-                print("테스트 3 : \(isLoading)")
-                return isLoading ? vc.indicatorInTableFooterView : nil
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, isLoading in
+                vc.myTableView.tableFooterView = isLoading ? vc.indicatorInTableFooterView : nil
             })
-            .asDriver(onErrorJustReturn: nil)
-            .drive(myTableView.rx.tableFooterView)
             .disposed(by: disposeBag)
         
         todosVM.notifyIsLoading
-            .observe(on: MainScheduler.instance)
-            .withUnretained(self)
-            .subscribe(onNext: { vc, isLoading in
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, isLoading in
                 isLoading ? vc.loadingIndicator.startAnimating() : vc.loadingIndicator.stopAnimating()
             })
             .disposed(by: disposeBag)
         
         todosVM.notifyRefresh
-            .observe(on: MainScheduler.instance)
-            .withUnretained(self)
-            .subscribe(onNext: { vc, _ in
+            .asDriver(onErrorJustReturn: ())
+            .drive(with: self, onNext: { vc, _ in
                 vc.refreshControl.endRefreshing()
             }).disposed(by: disposeBag)
         
         todosVM.notifyHasNextPage
-            .withUnretained(self)
-            .map({ vc, hasNextPage -> UIView? in
-                hasNextPage ? nil : vc.noPageView
+            .asDriver(onErrorJustReturn: true)
+            .drive(with: self, onNext: { vc, hasNext in
+                vc.myTableView.tableFooterView = hasNext ? nil : vc.noPageView
             })
-            .asDriver(onErrorJustReturn: nil)
-            .drive(myTableView.rx.tableFooterView)
             .disposed(by: disposeBag)
         
         todosVM.notifyCompletedTodo
@@ -180,26 +173,22 @@ class RxMainVC: UIViewController {
             .disposed(by: disposeBag)
         
         todosVM.notifyTodosAdded
-            .observe(on: MainScheduler.instance)
-            .bind(onNext: { [weak self] in
-                guard let self = self else { return }
-                self.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+            .asDriver(onErrorJustReturn: ())
+            .drive(with: self, onNext: { vc, _ in
+                vc.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
             })
             .disposed(by: disposeBag)
-        
+       
         todosVM.notifyNoContent
-            .withUnretained(self)
-            .observe(on: MainScheduler.instance)
-            .map({ vc, isEmpty -> UIView? in
-                isEmpty ? vc.noContentView : nil
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, isEmpty in
+                vc.myTableView.backgroundView = isEmpty ? vc.noContentView : nil
             })
-            .asDriver(onErrorJustReturn: nil)
-            .drive(myTableView.rx.backgroundView)
             .disposed(by: disposeBag)
         
         todosVM.notifyError
-            .withUnretained(self)
-            .subscribe(onNext: { vc, input in
+            .asDriver(onErrorJustReturn: "오류가 발생했습니다.")
+            .drive(with: self, onNext: { vc, input in
                 vc.presentGuideAlert(message: input)
             }).disposed(by: disposeBag)
     }
@@ -260,5 +249,10 @@ class RxMainVC: UIViewController {
 
 
 
+
+
+
+
+    
 
 
