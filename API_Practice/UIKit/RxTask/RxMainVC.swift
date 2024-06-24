@@ -8,6 +8,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import RxRelay
 
 class RxMainVC: UIViewController {
     // MARK: - Variables
@@ -16,6 +17,10 @@ class RxMainVC: UIViewController {
     private var todosVM = TodosVM_Rx()
     private let disposeBag = DisposeBag()
     
+    // VC -> VM Action
+    private var addTodoAction = PublishRelay<String>()
+    private var deleteTodoAction = PublishRelay<Int>()
+    private var editTodoAction = PublishRelay<(Todo, String?, Bool?)>()
     
     // MARK: - UI components
     @IBOutlet weak var myTableView: UITableView!
@@ -27,7 +32,7 @@ class RxMainVC: UIViewController {
     @IBOutlet weak var noContentLabel: UILabel!
     @IBOutlet weak var loadingIndicator: UIActivityIndicatorView!
     
-    lazy var indicatorInTableFooterView: UIActivityIndicatorView = {
+    private lazy var indicatorInTableFooterView: UIActivityIndicatorView = {
         let view = UIActivityIndicatorView()
         view.color = .systemBlue
         view.startAnimating()
@@ -35,7 +40,7 @@ class RxMainVC: UIViewController {
         return view
     }()
     
-    lazy var noContentView: UIView = {
+    private lazy var noContentView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0,
                                         width: myTableView.bounds.width,
                                         height: 300))
@@ -50,7 +55,7 @@ class RxMainVC: UIViewController {
         return view
     }()
     
-    lazy var noPageView: UIView = {
+    private lazy var noPageView: UIView = {
         let view = UIView(frame: CGRect(x: 0, y: 0,
                                         width: myTableView.bounds.width,
                                         height: 50))
@@ -65,135 +70,128 @@ class RxMainVC: UIViewController {
         return view
     }()
     
-    let refreshControl = UIRefreshControl()
+    private let refreshControl = UIRefreshControl()
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setTableview()
-        setOutputFromViewModel()
-        setOutputFromUI()
+        setAddTodoBtnAction()
+        setDataBinding()
     }
     
     // MARK: - UI Setup
-
     private func setTableview() {
         myTableView.register(RxTodoCell.uinib, forCellReuseIdentifier: RxTodoCell.reuseIdentifier)
-        
         myTableView.refreshControl = refreshControl
     }
     
-    private func setOutputFromUI() {
-        self.myTableView
-            .rx.isBottomNeared
-            .bind(onNext: todosVM.fetchMoreTodos)
-            .disposed(by: disposeBag)
-        
-        self.refreshControl.rx.controlEvent(.valueChanged)
-            .withUnretained(self)
-            .subscribe(onNext: { vc, _ in
-                vc.todosVM.fetchRefresh()
-            }).disposed(by: disposeBag)
-        
-        self.searchBar.searchTextField.rx.text.orEmpty
-            .withUnretained(self)
-            .subscribe(onNext: { (vc, input) in
-                vc.todosVM.searchTerm.accept(input)
+    private func setAddTodoBtnAction() {
+        self.addTodoBtn.rx.tap
+            .bind(with: self, onNext: { vc, _ in
+                vc.presentNewTodoAlert()
             })
             .disposed(by: disposeBag)
-        
-        self.completedTodosDeleteBtn.rx.tap
-            .withUnretained(self)
-            .subscribe { vc, _ in
-                vc.todosVM.completedTodosDelete()
-            }
-            .disposed(by: disposeBag)
-        
-        self.addTodoBtn.rx.tap
-            .withUnretained(self)
-            .subscribe { vc, _ in
-                vc.presentNewTodoAlert()
-            }
-            .disposed(by: disposeBag)
+    }
+}
+
+// MARK: - ViewModel Data Binding (Input, Output)
+extension RxMainVC {
+    private func setDataBinding() {
+        let output = self.todosVM.transform(input: makeInputAction())
+        bindingDataState(output)
     }
     
-    private func setOutputFromViewModel() {
-        todosVM.notifyTodos
-        // observe(on:), catchAndReture(), strong self
+    private func makeInputAction() -> TodosVM_Rx.Input {
+        let fetchMoreAction = self.myTableView.rx.isBottomNeared.map { _ in }
+        
+        let refreshEvent = self.refreshControl.rx.controlEvent(.valueChanged).map { _ in }
+            
+        let searchTermAction = self.searchBar.searchTextField.rx.text.orEmpty.map { $0 }
+        
+        let completedTodosDeleteAction = completedTodosDeleteBtn.rx.tap.map { $0 }
+        
+        return .init(fetchRefresh: refreshEvent,
+                     fetchMoreTodos: fetchMoreAction,
+                     addTodo: self.addTodoAction.asObservable(),
+                     completedTodosDelete: completedTodosDeleteAction,
+                     deleteTodo: self.deleteTodoAction.asObservable(),
+                     editTodo: self.editTodoAction.asObservable(),
+                     searchTerm: searchTermAction)
+    }
+    
+    private func bindingDataState(_ output: TodosVM_Rx.Output) {
+        output.todos
             .asDriver(onErrorJustReturn: [])
-            .drive(myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self] index, item, cell in
+            .drive(self.myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self]index, item, cell in
                 
                 guard let self = self else { return }
             
                 cell.setTodo(item)
                 cell.tappedSwitch = { todo, isDone in
-                    self.todosVM.editTodo(todo: todo, changeIsDone: isDone)
+                    self.editTodoAction.accept((todo, nil, isDone))
                 }
                 cell.tappedEditBtn = self.presentEditTodoAlert(todo:existingContent:)
                 cell.tappedDeleteBtn = self.presentDeleteTodoAlert(id:)
             }
             .disposed(by: disposeBag)
         
-        todosVM.notifyPage
+        output.notifyPage
             .asDriver(onErrorJustReturn: "페이지 정보가 없습니다.")
             .drive(pageInfoLabel.rx.text)
             .disposed(by: disposeBag)
         
-        todosVM.notifyIsLoading
+        output.notifyIsLoading
             .asDriver(onErrorJustReturn: false)
             .drive(with: self, onNext: { vc, isLoading in
                 vc.myTableView.tableFooterView = isLoading ? vc.indicatorInTableFooterView : nil
-            })
-            .disposed(by: disposeBag)
-        
-        todosVM.notifyIsLoading
-            .asDriver(onErrorJustReturn: false)
-            .drive(with: self, onNext: { vc, isLoading in
                 isLoading ? vc.loadingIndicator.startAnimating() : vc.loadingIndicator.stopAnimating()
             })
             .disposed(by: disposeBag)
         
-        todosVM.notifyRefresh
+        output.notifyRefresh
             .asDriver(onErrorJustReturn: ())
             .drive(with: self, onNext: { vc, _ in
                 vc.refreshControl.endRefreshing()
             }).disposed(by: disposeBag)
         
-        todosVM.notifyHasNextPage
-            .asDriver(onErrorJustReturn: true)
+        output.notifyHasNextPage
+            .asDriver(onErrorJustReturn: false)
             .drive(with: self, onNext: { vc, hasNext in
                 vc.myTableView.tableFooterView = hasNext ? nil : vc.noPageView
             })
             .disposed(by: disposeBag)
         
-        todosVM.notifyCompletedTodo
+        output.notifyCompletedTodo
             .map({ "완료된 일 : \($0)" })
             .asDriver(onErrorJustReturn: "완료된 일 :")
             .drive(completedTodosLabel.rx.text)
             .disposed(by: disposeBag)
         
-        todosVM.notifyTodosAdded
+        output.notifyTodosAdded
             .asDriver(onErrorJustReturn: ())
             .drive(with: self, onNext: { vc, _ in
                 vc.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
             })
             .disposed(by: disposeBag)
        
-        todosVM.notifyNoContent
-            .asDriver(onErrorJustReturn: false)
+        output.notifyNoContent
+            .asDriver(onErrorJustReturn: true)
             .drive(with: self, onNext: { vc, isEmpty in
                 vc.myTableView.backgroundView = isEmpty ? vc.noContentView : nil
             })
             .disposed(by: disposeBag)
         
-        todosVM.notifyError
+        output.notifyError
             .asDriver(onErrorJustReturn: "오류가 발생했습니다.")
             .drive(with: self, onNext: { vc, input in
                 vc.presentGuideAlert(message: input)
             }).disposed(by: disposeBag)
     }
-    
-    // MARK: - Alert
+}
+
+// MARK: - Alert
+extension RxMainVC {
     private func presentGuideAlert(message: String?) {
         let alert = UIAlertController(title: "안내", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("닫기", comment: "Default action"), style: .cancel))
@@ -208,8 +206,7 @@ class RxMainVC: UIViewController {
             guard let alert = alert,
                   let self = self,
                   let userInput = alert.textFields?.first?.text else { return }
-            
-            self.todosVM.addTodo(content: userInput)
+            self.addTodoAction.accept(userInput)
         }))
         
         self.present(alert, animated: true, completion: nil)
@@ -224,8 +221,7 @@ class RxMainVC: UIViewController {
             guard let alert = alert,
                   let self = self,
                   let userInput = alert.textFields?.first?.text else { return }
-            
-            self.todosVM.editTodo(todo: todo, editContent: userInput)
+            self.editTodoAction.accept((todo, userInput, nil))
         }))
         
         self.present(alert, animated: true, completion: nil)
@@ -236,8 +232,7 @@ class RxMainVC: UIViewController {
         alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
         alert.addAction(UIAlertAction(title: NSLocalizedString("확인", comment: "Default action"), style: .default, handler: { [weak self] _ in
             guard let self = self else { return }
-            
-            self.todosVM.deleteTodo(id)
+            self.deleteTodoAction.accept(id)
         }))
         
         self.present(alert, animated: true, completion: nil)
@@ -254,5 +249,6 @@ class RxMainVC: UIViewController {
 
 
     
+
 
 

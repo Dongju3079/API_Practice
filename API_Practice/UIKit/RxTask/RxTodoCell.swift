@@ -52,6 +52,9 @@ class RxTodoCell: UITableViewCell {
         titleLabel.text = "\(id)"
         contentLabel.text = content
         selectionSwitch.isOn = isDone
+        
+        print("테스트 5 : setTodo")
+
     }
     
     

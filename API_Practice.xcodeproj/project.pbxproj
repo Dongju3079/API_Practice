@@ -46,6 +46,7 @@
 		525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80BE2C103EA80083C79D /* TodosVM_Rx.swift */; };
 		525B80C12C11DC740083C79D /* TodosAPI+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */; };
 		525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C22C11DE860083C79D /* TodosVM_Combine.swift */; };
+		527B67A02C29AD2A007420CB /* ViewModelType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527B679F2C29AD2A007420CB /* ViewModelType.swift */; };
 		528B96482C19D06800DF249D /* AnyPublisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */; };
 		528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96492C1A98A100DF249D /* ObservableType+Ext.swift */; };
 		529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529C82452C210DA700B076A6 /* ViewController+Ext.swift */; };
@@ -90,6 +91,7 @@
 		525B80BE2C103EA80083C79D /* TodosVM_Rx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Rx.swift; sourceTree = "<group>"; };
 		525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodosAPI+Combine.swift"; sourceTree = "<group>"; };
 		525B80C22C11DE860083C79D /* TodosVM_Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Combine.swift; sourceTree = "<group>"; };
+		527B679F2C29AD2A007420CB /* ViewModelType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelType.swift; sourceTree = "<group>"; };
 		528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyPublisher+Ext.swift"; sourceTree = "<group>"; };
 		528B96492C1A98A100DF249D /* ObservableType+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ObservableType+Ext.swift"; sourceTree = "<group>"; };
 		529C82452C210DA700B076A6 /* ViewController+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+Ext.swift"; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 				525B80BE2C103EA80083C79D /* TodosVM_Rx.swift */,
 				525B80C22C11DE860083C79D /* TodosVM_Combine.swift */,
 				5201FD392C166A1A00E32902 /* TodosVM_Async.swift */,
+				527B679F2C29AD2A007420CB /* ViewModelType.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -362,6 +365,7 @@
 				525B80842C074FAE0083C79D /* MainVC.swift in Sources */,
 				525B808F2C084F210083C79D /* Identifier.swift in Sources */,
 				5201FD3A2C166A1A00E32902 /* TodosVM_Async.swift in Sources */,
+				527B67A02C29AD2A007420CB /* ViewModelType.swift in Sources */,
 				525B80A82C0EFE1A0083C79D /* TodosAPI+Closure.swift in Sources */,
 				525B80AE2C0EFFCD0083C79D /* Url+Ext.swift in Sources */,
 				525B808D2C084E590083C79D /* Nibbed.swift in Sources */,
