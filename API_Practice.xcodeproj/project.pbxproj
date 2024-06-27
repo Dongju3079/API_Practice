@@ -47,6 +47,8 @@
 		525B80C12C11DC740083C79D /* TodosAPI+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */; };
 		525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B80C22C11DE860083C79D /* TodosVM_Combine.swift */; };
 		527B67A02C29AD2A007420CB /* ViewModelType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527B679F2C29AD2A007420CB /* ViewModelType.swift */; };
+		527B67A62C2D2909007420CB /* ReactorKit in Frameworks */ = {isa = PBXBuildFile; productRef = 527B67A52C2D2909007420CB /* ReactorKit */; };
+		527B67A92C2D3D4A007420CB /* TodosReactor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527B67A82C2D3D4A007420CB /* TodosReactor.swift */; };
 		528B96482C19D06800DF249D /* AnyPublisher+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */; };
 		528B964A2C1A98A100DF249D /* ObservableType+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528B96492C1A98A100DF249D /* ObservableType+Ext.swift */; };
 		529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529C82452C210DA700B076A6 /* ViewController+Ext.swift */; };
@@ -92,6 +94,7 @@
 		525B80C02C11DC740083C79D /* TodosAPI+Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TodosAPI+Combine.swift"; sourceTree = "<group>"; };
 		525B80C22C11DE860083C79D /* TodosVM_Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosVM_Combine.swift; sourceTree = "<group>"; };
 		527B679F2C29AD2A007420CB /* ViewModelType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelType.swift; sourceTree = "<group>"; };
+		527B67A82C2D3D4A007420CB /* TodosReactor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosReactor.swift; sourceTree = "<group>"; };
 		528B96472C19D06800DF249D /* AnyPublisher+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnyPublisher+Ext.swift"; sourceTree = "<group>"; };
 		528B96492C1A98A100DF249D /* ObservableType+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ObservableType+Ext.swift"; sourceTree = "<group>"; };
 		529C82452C210DA700B076A6 /* ViewController+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+Ext.swift"; sourceTree = "<group>"; };
@@ -106,6 +109,7 @@
 			files = (
 				525B80B72C0F047E0083C79D /* RxRelay in Frameworks */,
 				525B80B52C0F047E0083C79D /* RxCocoa in Frameworks */,
+				527B67A62C2D2909007420CB /* ReactorKit in Frameworks */,
 				525B80B92C0F047E0083C79D /* RxSwift in Frameworks */,
 				5201FD362C1470BA00E32902 /* CombineExt in Frameworks */,
 				52FDF0B22C1AB81D00A7C3E1 /* RxCombine in Frameworks */,
@@ -263,6 +267,7 @@
 				525B80C22C11DE860083C79D /* TodosVM_Combine.swift */,
 				5201FD392C166A1A00E32902 /* TodosVM_Async.swift */,
 				527B679F2C29AD2A007420CB /* ViewModelType.swift */,
+				527B67A82C2D3D4A007420CB /* TodosReactor.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -290,6 +295,7 @@
 				525B80B82C0F047E0083C79D /* RxSwift */,
 				5201FD352C1470BA00E32902 /* CombineExt */,
 				52FDF0B12C1AB81D00A7C3E1 /* RxCombine */,
+				527B67A52C2D2909007420CB /* ReactorKit */,
 			);
 			productName = API_Practice;
 			productReference = 525B806F2C074D790083C79D /* API_Practice.app */;
@@ -324,6 +330,7 @@
 				525B80B32C0F047E0083C79D /* XCRemoteSwiftPackageReference "RxSwift" */,
 				5201FD342C1470BA00E32902 /* XCRemoteSwiftPackageReference "CombineExt" */,
 				52FDF0B02C1AB81D00A7C3E1 /* XCRemoteSwiftPackageReference "RxCombine" */,
+				527B67A42C2D2909007420CB /* XCRemoteSwiftPackageReference "ReactorKit" */,
 			);
 			productRefGroup = 525B80702C074D790083C79D /* Products */;
 			projectDirPath = "";
@@ -378,6 +385,7 @@
 				525B80BF2C103EA80083C79D /* TodosVM_Rx.swift in Sources */,
 				529C82462C210DA700B076A6 /* ViewController+Ext.swift in Sources */,
 				5233B5B92C22C2DA00D5B42F /* RxMainVC.swift in Sources */,
+				527B67A92C2D3D4A007420CB /* TodosReactor.swift in Sources */,
 				525B80C32C11DE860083C79D /* TodosVM_Combine.swift in Sources */,
 				525B80BB2C0F4C850083C79D /* UrlRequest+Ext.swift in Sources */,
 				525B80732C074D790083C79D /* API_PracticeApp.swift in Sources */,
@@ -622,6 +630,14 @@
 				minimumVersion = 6.7.1;
 			};
 		};
+		527B67A42C2D2909007420CB /* XCRemoteSwiftPackageReference "ReactorKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactorKit/ReactorKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.2.0;
+			};
+		};
 		52FDF0B02C1AB81D00A7C3E1 /* XCRemoteSwiftPackageReference "RxCombine" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CombineCommunity/RxCombine.git";
@@ -657,6 +673,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 525B80B32C0F047E0083C79D /* XCRemoteSwiftPackageReference "RxSwift" */;
 			productName = RxSwift;
+		};
+		527B67A52C2D2909007420CB /* ReactorKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 527B67A42C2D2909007420CB /* XCRemoteSwiftPackageReference "ReactorKit" */;
+			productName = ReactorKit;
 		};
 		52FDF0B12C1AB81D00A7C3E1 /* RxCombine */ = {
 			isa = XCSwiftPackageProductDependency;

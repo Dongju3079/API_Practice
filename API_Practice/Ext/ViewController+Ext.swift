@@ -30,7 +30,7 @@ extension MainVC {
 
 extension RxMainVC {
     
-    private struct VCRepresentable: UIViewControllerRepresentable {
+    struct VCRepresentable: UIViewControllerRepresentable {
         
         let rxMainVC: RxMainVC
         
@@ -42,7 +42,7 @@ extension RxMainVC {
         }
     }
     
-    func getRepresentable() -> some View {
+    func getRepresentable() -> VCRepresentable {
         VCRepresentable(rxMainVC: self)
     }
 }

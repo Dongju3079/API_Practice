@@ -9,15 +9,18 @@ import UIKit
 import RxSwift
 import RxCocoa
 import RxRelay
+import ReactorKit
 
-class RxMainVC: UIViewController {
+class RxMainVC: UIViewController, StoryboardView {
+    typealias Reactor = TodosReactor
+    
     // MARK: - Variables
     private lazy var todos: [Todo] = []
     
     private var todosVM = TodosVM_Rx()
-    private let disposeBag = DisposeBag()
+    var disposeBag = DisposeBag()
     
-    // VC -> VM Action
+    // MARK: - Output Action Variables
     private var addTodoAction = PublishRelay<String>()
     private var deleteTodoAction = PublishRelay<Int>()
     private var editTodoAction = PublishRelay<(Todo, String?, Bool?)>()
@@ -70,14 +73,14 @@ class RxMainVC: UIViewController {
         return view
     }()
     
-    private let refreshControl = UIRefreshControl()
+    let refreshControl = UIRefreshControl()
     
     // MARK: - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        reactor = TodosReactor()
         setTableview()
         setAddTodoBtnAction()
-        setDataBinding()
     }
     
     // MARK: - UI Setup
@@ -87,31 +90,128 @@ class RxMainVC: UIViewController {
     }
     
     private func setAddTodoBtnAction() {
-        self.addTodoBtn.rx.tap
-            .bind(with: self, onNext: { vc, _ in
-                vc.presentNewTodoAlert()
+        print("테스트 55 : tap 등록")
+        
+    }
+    
+   
+}
+
+// MARK: - ReactoreKit
+extension RxMainVC {
+    func bind(reactor: TodosReactor) {
+        print(#fileID, #function, #line, "-vc bind ")
+        // input
+        self.refreshControl.rx.controlEvent(.valueChanged)
+            .map { _ in Reactor.Action.fetchRefresh }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.myTableView.rx.isBottomNeared
+            .map { _ in Reactor.Action.fetchMore }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.searchBar.searchTextField.rx.text.orEmpty
+            .debounce(RxTimeInterval.milliseconds(700), scheduler: MainScheduler.instance)
+            .map { 
+                if $0.count > 0 {
+                    return Reactor.Action.searchTodos(searchTerm: $0)
+                } else {
+                    return Reactor.Action.fetchRefresh
+                }
+            }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.searchBar.searchTextField.rx.text.orEmpty
+            .skip(1)
+            .filter { $0.count > 0 }
+            .map { _ in Reactor.Action.clearTodos }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        
+        // output
+        
+        // Pulse란?
+        // 해당 프로퍼티가 변경될 때만 감지
+        // state로 접근하면 state의 변경사항이 발생하라 때 마다 실행됨
+        // pulse로 접근하면 특정 프로퍼티가 변경됐을 때만 실행됨
+        
+        reactor.pulse(\.$todos)
+            .asDriver(onErrorJustReturn: [])
+            .drive(self.myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self]index, item, cell in
+            
+            guard let self = self else { return }
+        
+            cell.setTodo(item)
+            cell.tappedSwitch = { todo, isDone in
+                self.editTodoAction.accept((todo, nil, isDone))
+            }
+            cell.tappedEditBtn = self.presentEditTodoAlert(todo:existingContent:)
+            cell.tappedDeleteBtn = self.presentDeleteTodoAlert(id:)
+        }
+        .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$refreshEnded)
+            .asDriver(onErrorJustReturn: ())
+            .drive(with: self, onNext: { vc, _ in
+                vc.refreshControl.endRefreshing()
             })
             .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$isLoading)
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, isLoading in
+                vc.myTableView.tableFooterView = isLoading ? vc.indicatorInTableFooterView : nil
+                isLoading ? vc.loadingIndicator.startAnimating() : vc.loadingIndicator.stopAnimating()
+            })
+            .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$pageInfo)
+            .compactMap { $0?.hasNext() }
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, hasNext in
+                vc.myTableView.tableFooterView = hasNext ? nil : vc.noPageView
+            })
+            .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$hasContent)
+            .asDriver(onErrorJustReturn: false)
+            .drive(with: self, onNext: { vc, isEmpty in
+                vc.myTableView.backgroundView = isEmpty ? nil : vc.noContentView
+            })
+            .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$errorMessage)
+            .asDriver(onErrorJustReturn: "오류가 발생했습니다.")
+            .drive(with: self, onNext: { vc, input in
+                vc.presentGuideAlert(message: input)
+            }).disposed(by: disposeBag)
     }
 }
 
 // MARK: - ViewModel Data Binding (Input, Output)
 extension RxMainVC {
+    
+    
     private func setDataBinding() {
         let output = self.todosVM.transform(input: makeInputAction())
         bindingDataState(output)
     }
     
     private func makeInputAction() -> TodosVM_Rx.Input {
-        let fetchMoreAction = self.myTableView.rx.isBottomNeared.map { _ in }
         
-        let refreshEvent = self.refreshControl.rx.controlEvent(.valueChanged).map { _ in }
-            
-        let searchTermAction = self.searchBar.searchTextField.rx.text.orEmpty.map { $0 }
+        let fetchRefresh = self.refreshControl.rx.controlEvent(.valueChanged).map { _ in }
+        
+        let fetchMoreAction = self.myTableView.rx.isBottomNeared.map { _ in }
         
         let completedTodosDeleteAction = completedTodosDeleteBtn.rx.tap.map { $0 }
         
-        return .init(fetchRefresh: refreshEvent,
+        let searchTermAction = self.searchBar.searchTextField.rx.text.orEmpty.map { $0 }
+        
+        return .init(fetchRefresh: fetchRefresh,
                      fetchMoreTodos: fetchMoreAction,
                      addTodo: self.addTodoAction.asObservable(),
                      completedTodosDelete: completedTodosDeleteAction,
@@ -121,6 +221,7 @@ extension RxMainVC {
     }
     
     private func bindingDataState(_ output: TodosVM_Rx.Output) {
+                
         output.todos
             .asDriver(onErrorJustReturn: [])
             .drive(self.myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self]index, item, cell in
@@ -202,12 +303,12 @@ extension RxMainVC {
         let alert = UIAlertController(title: "할 일 추가", message: "할 일을 입력하세요.", preferredStyle: .alert)
         alert.addTextField()
         alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
-        alert.addAction(UIAlertAction(title: NSLocalizedString("추가", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
-            guard let alert = alert,
-                  let self = self,
-                  let userInput = alert.textFields?.first?.text else { return }
-            self.addTodoAction.accept(userInput)
-        }))
+//        alert.addAction(UIAlertAction(title: NSLocalizedString("추가", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
+//            guard let alert = alert,
+//                  let self = self,
+//                  let userInput = alert.textFields?.first?.text else { return }
+//            self.addTodoAction.accept(userInput)
+//        }))
         
         self.present(alert, animated: true, completion: nil)
     }

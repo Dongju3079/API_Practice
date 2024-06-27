@@ -42,7 +42,7 @@ class TodosVM_Rx: ObservableObject, ViewModelType {
     }
     
     func transform(input: Input) -> Output {
-        
+
         input.fetchRefresh
             .bind(with: self) { vm, _ in
                 vm.fetchRefresh()
@@ -167,7 +167,10 @@ extension TodosVM_Rx {
         
         TodosAPI_Rx.addTodoAndFetchTodos(content: content)
             .delay(.milliseconds(700), scheduler: MainScheduler.instance)
-            .compactMap { Optional(tuple: ($0.meta, $0.data)) }
+            .compactMap { 
+                let test = Optional(tuple: ($0.meta, $0.data))
+                return test
+            }
             .withUnretained(self)
             .subscribe(
                 onNext: { vm, response in
@@ -336,7 +339,7 @@ extension TodosVM_Rx {
         
         switch apiError {
         case .noContent:
-            
+
             notifyNoContent.accept((true))
         case .errResponseFromServer(let errorResponse):
             errorAccrued.accept(errorResponse?.message ?? "알 수 없는 에러")
@@ -355,6 +358,7 @@ extension TodosVM_Rx {
         }
     }
 }
+
 
 
 
