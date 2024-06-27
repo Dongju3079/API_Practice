@@ -158,6 +158,7 @@ extension RxMainVC {
             .asDriver(onErrorJustReturn: ())
             .drive(with: self, onNext: { vc, _ in
                 vc.refreshControl.endRefreshing()
+                vc.searchBar.searchTextField.text = nil
             })
             .disposed(by: disposeBag)
         
@@ -350,6 +351,7 @@ extension RxMainVC {
 
 
     
+
 
 
 

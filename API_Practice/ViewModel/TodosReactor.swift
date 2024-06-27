@@ -27,7 +27,6 @@ class TodosReactor: Reactor {
         case catchError(err: Error)
     }
     
-    
     struct State {
         var searchTerm: String? = nil
         @Pulse var todos: [Todo]
@@ -182,3 +181,6 @@ class TodosReactor: Reactor {
     }
     
 }
+
+
+
