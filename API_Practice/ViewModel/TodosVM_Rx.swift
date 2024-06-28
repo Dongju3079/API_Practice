@@ -199,14 +199,7 @@ extension TodosVM_Rx {
             .withUnretained(self)
             .subscribe(
                 onNext: { vm, completedTodosId in
-                    let existingTodosList = vm.todos.value
-                    let existingCompletedTodos = vm.completedTodos.value
-                    
-                    let afterTaskTodosList = existingTodosList.filter { !completedTodosId.contains($0.id ?? 0)}
-                    
-                    let afterTaskCompletedTodos = existingCompletedTodos.filter { !completedTodosId.contains($0)}
-                    
-                    vm.completedTodos.accept(afterTaskCompletedTodos)
+                    let afterTaskTodosList = vm.todos.value.filter { !completedTodosId.contains($0.id ?? 0)}
                     vm.todos.accept(afterTaskTodosList)
                 }, onError: { [weak self] err in
                     guard let self = self else { return }
@@ -311,15 +304,17 @@ extension TodosVM_Rx {
                         let existingTodos = self.todos.value
                         self.todos.accept(existingTodos + response.1)
                     }
+                    self.isLoading.accept(false)
                     self.pageInfo.accept(response.0)
-                    
+                    print("테스트 150 : page has next \(response.0.hasNext())")
 
                 },onError: { [weak self] err in
                     guard let self = self else { return }
                     self.handleError(err)
                 },onCompleted: { [weak self] in
                     guard let self = self else { return }
-                    self.isLoading.accept(false)
+                    print("테스트 150 : load end")
+                    
                 })
             .disposed(by: disposeBag)
     }

@@ -16,7 +16,6 @@ extension ObservableType {
             var disposable : Disposable? = nil
             
             disposable = single()
-                .debug()
                 .subscribe(
                     onNext: { data in
                         continuation.resume(returning: data)

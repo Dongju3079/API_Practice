@@ -80,7 +80,6 @@ class RxMainVC: UIViewController, StoryboardView {
         super.viewDidLoad()
         reactor = TodosReactor()
         setTableview()
-        setAddTodoBtnAction()
     }
     
     // MARK: - UI Setup
@@ -88,20 +87,13 @@ class RxMainVC: UIViewController, StoryboardView {
         myTableView.register(RxTodoCell.uinib, forCellReuseIdentifier: RxTodoCell.reuseIdentifier)
         myTableView.refreshControl = refreshControl
     }
-    
-    private func setAddTodoBtnAction() {
-        print("테스트 55 : tap 등록")
-        
-    }
-    
-   
 }
 
 // MARK: - ReactoreKit
 extension RxMainVC {
     func bind(reactor: TodosReactor) {
-        print(#fileID, #function, #line, "-vc bind ")
-        // input
+        setAddTodoBtnAction()
+        
         self.refreshControl.rx.controlEvent(.valueChanged)
             .map { _ in Reactor.Action.fetchRefresh }
             .bind(to: reactor.action)
@@ -112,9 +104,22 @@ extension RxMainVC {
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
-        self.searchBar.searchTextField.rx.text.orEmpty
+        // 기존 방식 self.searchBar.searchTextField.rx.text.orEmpty
+        // 검색창 클릭, 얼럿창 실행 or 종료 등의 이벤트로 포커스가 변경되면서 이벤트가 발생할 수 있음
+        // 클릭만 해도 로직 실행, 얼럿창 실행 or 종료만으로도 로직이 실행돼서 불필요한 리소스 발생
+        
+        // 텍스트필드의 내부 내용이 변경될 때만 실행하도록 변경
+        
+        self.searchBar.searchTextField.rx.controlEvent(.editingChanged)
+            .withUnretained(self)
+            .do(onNext: { vc, _ in
+                vc.myTableView.tableFooterView = nil
+            })
+            .compactMap { vc, _ in
+                return vc.searchBar.searchTextField.text
+            }
             .debounce(RxTimeInterval.milliseconds(700), scheduler: MainScheduler.instance)
-            .map { 
+            .map {
                 if $0.count > 0 {
                     return Reactor.Action.searchTodos(searchTerm: $0)
                 } else {
@@ -131,18 +136,32 @@ extension RxMainVC {
             .bind(to: reactor.action)
             .disposed(by: disposeBag)
         
+        self.addTodoAction
+            .map { Reactor.Action.addTodo(content: $0) }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.editTodoAction
+            .map { Reactor.Action.editTodo(todo: $0.0, content: $0.1, isDone: $0.2) }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.deleteTodoAction
+            .map { Reactor.Action.deleteTodo(id: $0) }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
+        
+        self.completedTodosDeleteBtn.rx.tap
+            .map { _ in Reactor.Action.completeTodos }
+            .bind(to: reactor.action)
+            .disposed(by: disposeBag)
         
         // output
-        
-        // Pulse란?
-        // 해당 프로퍼티가 변경될 때만 감지
-        // state로 접근하면 state의 변경사항이 발생하라 때 마다 실행됨
-        // pulse로 접근하면 특정 프로퍼티가 변경됐을 때만 실행됨
-        
+  
         reactor.pulse(\.$todos)
             .asDriver(onErrorJustReturn: [])
             .drive(self.myTableView.rx.items(cellIdentifier: RxTodoCell.reuseIdentifier, cellType: RxTodoCell.self)) { [weak self]index, item, cell in
-            
+                print("테스트 150 : $todos")
             guard let self = self else { return }
         
             cell.setTodo(item)
@@ -154,42 +173,88 @@ extension RxMainVC {
         }
         .disposed(by: disposeBag)
         
+        reactor.state
+            .map({ $0.completedTodos.map { "\($0)" }.joined(separator: ", ") })
+            .map({ "완료된 일 : \($0)" })
+            .asDriver(onErrorJustReturn: "완료된 일 :")
+            .drive(completedTodosLabel.rx.text)
+            .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$addedTodo)
+            .skip(1)
+            .asDriver(onErrorJustReturn: ())
+            .drive(with: self, onNext: { vc, _ in
+                vc.myTableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         reactor.pulse(\.$refreshEnded)
             .asDriver(onErrorJustReturn: ())
             .drive(with: self, onNext: { vc, _ in
+                print("테스트 150 : $refreshEnded")
                 vc.refreshControl.endRefreshing()
+            })
+            .disposed(by: disposeBag)
+        
+        reactor.pulse(\.$resetSearchTerm)
+            .asDriver(onErrorJustReturn: ())
+            .drive(with: self, onNext: { vc, _ in
                 vc.searchBar.searchTextField.text = nil
             })
             .disposed(by: disposeBag)
         
+        // 요점은 isLoading 호출되는 시점, pageInfo가 호출되는 시점
+        // pageInfo는 로직상 concat 중간에 위치함
+        // isLoading(false)는 로직상 마지막에 위치해야 함
+        // 위 이유는 isLoading(false)가 먼저 호출되면 Url 호출 전에 indicator가 꺼짐
+        // 해결방안
+        // isLoading(false)가 호출 되었을 때
+        // pageInfo의 hasNext를 확인
+        // 방향은 두가지 tableFooterView가 nil이거나 마지막 페이지인 noPageView거나
+        // hasNext를 확인해서 다음 페이지가 있을 경우 nil 없을 경우 noPageView
+        // pageInfo가 없는 경우 noContentView가 표시
+        // noContentError 발생 시 pageInfo = nil (noContentError는 isLoading(false) 보다 먼저 호출되기에 pageInfo가 nil인 상태가 됨)
+        // pageInfo가 nil인 경우 tableFooterView는 nil
+        
         reactor.pulse(\.$isLoading)
             .asDriver(onErrorJustReturn: false)
             .drive(with: self, onNext: { vc, isLoading in
-                vc.myTableView.tableFooterView = isLoading ? vc.indicatorInTableFooterView : nil
-                isLoading ? vc.loadingIndicator.startAnimating() : vc.loadingIndicator.stopAnimating()
-            })
-            .disposed(by: disposeBag)
-        
-        reactor.pulse(\.$pageInfo)
-            .compactMap { $0?.hasNext() }
-            .asDriver(onErrorJustReturn: false)
-            .drive(with: self, onNext: { vc, hasNext in
-                vc.myTableView.tableFooterView = hasNext ? nil : vc.noPageView
+                if isLoading {
+                    vc.loadingIndicator.startAnimating()
+                    vc.myTableView.tableFooterView = vc.indicatorInTableFooterView
+                } else {
+                    vc.loadingIndicator.stopAnimating()
+                    let hasNext = reactor.currentState.pageInfo?.hasNext()
+                    vc.myTableView.tableFooterView = (hasNext ?? true) ? nil : vc.noPageView
+                }
             })
             .disposed(by: disposeBag)
         
         reactor.pulse(\.$hasContent)
             .asDriver(onErrorJustReturn: false)
-            .drive(with: self, onNext: { vc, isEmpty in
-                vc.myTableView.backgroundView = isEmpty ? nil : vc.noContentView
+            .drive(with: self, onNext: { vc, hasContent in
+                print("테스트 150 : $hasContent")
+                vc.myTableView.backgroundView = hasContent ? nil : vc.noContentView
             })
             .disposed(by: disposeBag)
         
         reactor.pulse(\.$errorMessage)
             .asDriver(onErrorJustReturn: "오류가 발생했습니다.")
             .drive(with: self, onNext: { vc, input in
+                print("테스트 150 : $errorMessage")
                 vc.presentGuideAlert(message: input)
             }).disposed(by: disposeBag)
+    }
+}
+
+// MARK: - Tap Action
+extension RxMainVC {
+    private func setAddTodoBtnAction() {
+        self.addTodoBtn.rx.tap
+            .subscribe(with: self, onNext: { vc, _ in
+                vc.presentNewTodoAlert()
+            })
+            .disposed(by: disposeBag)
     }
 }
 
@@ -297,6 +362,7 @@ extension RxMainVC {
     private func presentGuideAlert(message: String?) {
         let alert = UIAlertController(title: "안내", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("닫기", comment: "Default action"), style: .cancel))
+        
         self.present(alert, animated: true, completion: nil)
     }
     
@@ -304,12 +370,12 @@ extension RxMainVC {
         let alert = UIAlertController(title: "할 일 추가", message: "할 일을 입력하세요.", preferredStyle: .alert)
         alert.addTextField()
         alert.addAction(UIAlertAction(title: NSLocalizedString("취소", comment: "Default action"), style: .destructive))
-//        alert.addAction(UIAlertAction(title: NSLocalizedString("추가", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
-//            guard let alert = alert,
-//                  let self = self,
-//                  let userInput = alert.textFields?.first?.text else { return }
-//            self.addTodoAction.accept(userInput)
-//        }))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("추가", comment: "Default action"), style: .default, handler: { [weak self, weak alert] _ in
+            guard let alert = alert,
+                  let self = self,
+                  let userInput = alert.textFields?.first?.text else { return }
+            self.addTodoAction.accept(userInput)
+        }))
         
         self.present(alert, animated: true, completion: nil)
     }
